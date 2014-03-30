@@ -270,7 +270,7 @@ get_exp_type(const gchar *s) {
         return EXP_SIMPLE_VAR;
 
     /*@notreached@*/
-return EXP_ERR;
+    return EXP_ERR;
 }
 
 /*
@@ -823,6 +823,7 @@ load_finish_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
 void clear_keycmd() {
   g_free(uzbl.state.keycmd);
   uzbl.state.keycmd = g_strdup("");
+  uzbl.state.keycmd_pos = 0;
 }
 
 void
@@ -2294,8 +2295,7 @@ configure_event_cb(GtkWidget* window, GdkEventConfigure* event) {
 }
 
 gboolean
-key_press_cb (GtkWidget* window, GdkEventKey* event)
-{
+key_press_cb (GtkWidget* window, GdkEventKey* event) {
     //TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
 
     (void) window;
@@ -2310,8 +2310,8 @@ key_press_cb (GtkWidget* window, GdkEventKey* event)
         event->keyval == GDK_End       ||
         event->keyval == GDK_Up        ||
         event->keyval == GDK_Down      ||
-        event->keyval == GDK_Left      ||
-        event->keyval == GDK_Right     ||
+        // event->keyval == GDK_Left      ||
+        // event->keyval == GDK_Right     ||
         event->keyval == GDK_Shift_L   ||
         event->keyval == GDK_Shift_R)
         return FALSE;
@@ -2320,6 +2320,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event)
     if (uzbl.behave.insert_mode && (event->keyval == GDK_Escape)) {
         set_insert_mode(uzbl.behave.always_insert_mode);
         update_title();
+        uzbl.state.keycmd_pos = 0;
         return TRUE;
     }
 
@@ -2330,15 +2331,17 @@ key_press_cb (GtkWidget* window, GdkEventKey* event)
        )
         return FALSE;
 
+
+    // *KEY* ESCAPE
     if (event->keyval == GDK_Escape) {
         clear_keycmd();
         update_title();
         dehilight(uzbl.gui.web_view, NULL, NULL);
         return TRUE;
     }
-
-    //Insert without shift - insert from clipboard; Insert with shift - insert from primary
+    // *KEY* INSERT
     if (event->keyval == GDK_Insert) {
+        //Insert without shift - insert from clipboard; Insert with shift - insert from primary
         gchar * str;
         if ((event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK) {
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_PRIMARY));
@@ -2346,6 +2349,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event)
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_CLIPBOARD));
         }
         if (str) {
+            uzbl.state.keycmd_pos += strlen(str);
             GString* keycmd = g_string_new(uzbl.state.keycmd);
             g_string_append (keycmd, str);
             uzbl.state.keycmd = g_string_free(keycmd, FALSE);
@@ -2354,18 +2358,35 @@ key_press_cb (GtkWidget* window, GdkEventKey* event)
         }
         return TRUE;
     }
-
-    if (event->keyval == GDK_BackSpace)
+    // *KEY* BACKSPACE
+    if (event->keyval == GDK_BackSpace) {
         keycmd_bs(NULL, NULL, NULL);
-
-    gboolean key_ret = FALSE;
-    if ((event->keyval == GDK_Return) || (event->keyval == GDK_KP_Enter))
-        key_ret = TRUE;
-    if (!key_ret) {
-        GString* keycmd = g_string_new(uzbl.state.keycmd);
-        g_string_append(keycmd, event->string);
-        uzbl.state.keycmd = g_string_free(keycmd, FALSE);
+        uzbl.state.keycmd_pos--;
     }
+    gboolean key_ret = FALSE;
+    gboolean key_no_add = FALSE;
+    // *KEY* LEFT
+    if (event->keyval == GDK_Left && uzbl.state.keycmd_pos>0) {
+    	key_no_add = TRUE;
+    	uzbl.state.keycmd_pos--;
+    }
+    // *KEY* RIGHT
+    if (event->keyval == GDK_Right && uzbl.state.keycmd_pos<(int)strlen(uzbl.state.keycmd)) {
+        key_no_add = TRUE;
+        uzbl.state.keycmd_pos++;
+    }
+    // *KEY* RETURN
+    if ((event->keyval == GDK_Return) || (event->keyval == GDK_KP_Enter)) {
+        key_ret = TRUE;
+        if(uzbl.state.keycmd_pos) uzbl.state.keycmd_pos--;
+    }
+    if (!key_ret && !key_no_add) { // heere
+        GString* keycmd = g_string_new(uzbl.state.keycmd);
+        g_string_insert(keycmd, uzbl.state.keycmd_pos, event->string);
+        uzbl.state.keycmd = g_string_free(keycmd, FALSE);
+        if(strlen(event->string)) uzbl.state.keycmd_pos++;
+    }
+    printf("%d, %d, %d, '%s', '%s'\n", uzbl.state.keycmd_pos, (int)strlen(uzbl.state.keycmd), (int)strlen(event->string), event->string, uzbl.state.keycmd);
 
     run_keycmd(key_ret);
     update_title();
@@ -2908,8 +2929,9 @@ retrieve_geometry() {
  * external applications need to do anyhow */
 void
 initialize(int argc, char *argv[]) {
-    if (!g_thread_supported ())
-        g_thread_init (NULL);
+    // apparently this is deprected and can just let out
+    // if (!g_thread_supported ())
+    //     g_thread_init (NULL);
     uzbl.state.executable_path = g_strdup(argv[0]);
     uzbl.state.selected_url = NULL;
     uzbl.state.searchtx = NULL;

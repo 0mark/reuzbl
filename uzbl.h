@@ -70,6 +70,7 @@ typedef struct {
     gchar*   keycmd;
     gchar*   searchtx;
     gboolean verbose;
+    int      keycmd_pos;
 } State;
 
 
