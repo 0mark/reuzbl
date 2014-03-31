@@ -488,7 +488,7 @@ parseenv (char* string) {
     gchar* tmpstr = NULL;
     int i = 0;
 
-
+    // Expand variables from ENV
     while (environ[i] != NULL) {
         gchar** env = g_strsplit (environ[i], "=", 2);
         gchar* envname = g_strconcat ("$", env[0], NULL);
@@ -503,6 +503,20 @@ parseenv (char* string) {
         g_free (envname);
         g_strfreev (env); // somebody said this breaks uzbl
         i++;
+    }
+
+    // XDG variables should be expanded to their default values if not in ENV
+    for(i=0; i<LENGTH(XDG); i++) {
+        gchar* envname = g_strconcat ("$", XDG[i].environmental, NULL);
+
+        if (g_strrstr (string, envname) != NULL) {
+            gchar* xdgv = get_xdg_var (XDG[i]);
+            tmpstr = g_strdup(string);
+            g_free (string);
+            string = str_replace(envname, xdgv, tmpstr);
+            g_free (tmpstr);
+            g_free (xdgv);
+        }
     }
 
     return string;
@@ -2300,6 +2314,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
 
     (void) window;
 
+    // TODO: at least try to make keys configurable heere!
     if(event->type == GDK_KEY_PRESS)
         send_event(KEYPRESS, gdk_keyval_name(event->keyval) );
 
@@ -2342,6 +2357,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     // *KEY* INSERT
     if (event->keyval == GDK_Insert) {
         //Insert without shift - insert from clipboard; Insert with shift - insert from primary
+        // TODO: insert at keycmd_pos
         gchar * str;
         if ((event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK) {
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_PRIMARY));
@@ -2360,9 +2376,11 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     }
     // *KEY* BACKSPACE
     if (event->keyval == GDK_BackSpace) {
+        // TODO: delete at keycmd_pos
         keycmd_bs(NULL, NULL, NULL);
         uzbl.state.keycmd_pos--;
     }
+    // TODO: KEY DELETE
     gboolean key_ret = FALSE;
     gboolean key_no_add = FALSE;
     // *KEY* LEFT
