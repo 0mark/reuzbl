@@ -1326,9 +1326,16 @@ keycmd_bs (WebKitWebView *page, GArray *argv, GString *result) {
     (void)argv;
     (void)result;
     int len = strlen(uzbl.state.keycmd);
-    prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + len);
-    if (prev)
-      uzbl.state.keycmd[prev - uzbl.state.keycmd] = '\0';
+    prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + /*len*/ uzbl.state.keycmd_pos);
+    if (prev) {
+        uzbl.state.keycmd[prev - uzbl.state.keycmd] = '\0';
+        if (prev - uzbl.state.keycmd < len - 1) {
+            GString* keycmd = g_string_new(uzbl.state.keycmd);
+            g_string_append(keycmd, &uzbl.state.keycmd[prev - uzbl.state.keycmd + 1]);
+            uzbl.state.keycmd = g_string_free(keycmd, FALSE);
+        }
+        uzbl.state.keycmd_pos--;
+    }
     update_title();
 }
 
@@ -2374,11 +2381,8 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
         return TRUE;
     }
     // *KEY* BACKSPACE
-    if (event->keyval == GDK_BackSpace) {
-        // TODO: delete at keycmd_pos
+    if (event->keyval == GDK_BackSpace)
         keycmd_bs(NULL, NULL, NULL);
-        uzbl.state.keycmd_pos--;
-    }
     // TODO: KEY DELETE
     gboolean key_ret = FALSE;
     gboolean key_no_add = FALSE;
