@@ -2357,7 +2357,6 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     // *KEY* INSERT
     if (event->keyval == GDK_Insert) {
         //Insert without shift - insert from clipboard; Insert with shift - insert from primary
-        // TODO: insert at keycmd_pos
         gchar * str;
         if ((event->state & GDK_SHIFT_MASK) == GDK_SHIFT_MASK) {
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_PRIMARY));
@@ -2365,9 +2364,9 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_CLIPBOARD));
         }
         if (str) {
-            uzbl.state.keycmd_pos += strlen(str);
             GString* keycmd = g_string_new(uzbl.state.keycmd);
-            g_string_append (keycmd, str);
+            g_string_insert(keycmd, uzbl.state.keycmd_pos, str);
+            uzbl.state.keycmd_pos += strlen(str);
             uzbl.state.keycmd = g_string_free(keycmd, FALSE);
             update_title ();
             g_free (str);
