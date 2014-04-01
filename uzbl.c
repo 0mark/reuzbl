@@ -2383,7 +2383,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     // *KEY* BACKSPACE
     if (event->keyval == GDK_BackSpace)
         keycmd_bs(NULL, NULL, NULL);
-    // TODO: KEY DELETE
+    // TODO: KEY DELETE 
     gboolean key_ret = FALSE;
     gboolean key_no_add = FALSE;
     // *KEY* LEFT
