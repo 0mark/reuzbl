@@ -117,6 +117,7 @@ const struct var_name_to_ptr_t {
     { "verbose",                PTR_V_INT(uzbl.state.verbose,                   1,   NULL)},
     { "inject_html",            PTR_V_STR(uzbl.behave.inject_html,              0,   cmd_inject_html)},
     { "keycmd",                 PTR_V_STR(uzbl.state.keycmd,                    1,   set_keycmd)},
+    { "keycmd_marked",          PTR_V_STR(uzbl.state.keycmd_marked,             1,   NULL)},
     { "status_message",         PTR_V_STR(uzbl.gui.sbar.msg,                    1,   update_title)},
     { "show_status",            PTR_V_INT(uzbl.behave.show_status,              1,   cmd_set_status)},
     { "status_top",             PTR_V_INT(uzbl.behave.status_top,               1,   move_statusbar)},
@@ -545,6 +546,7 @@ clean_up(void) {
 
     g_free(uzbl.state.executable_path);
     g_free(uzbl.state.keycmd);
+    uzbl.state.keycmd_pos = 0;
     g_hash_table_destroy(uzbl.bindings);
     g_hash_table_destroy(uzbl.behave.commands);
 }
@@ -1305,6 +1307,7 @@ keycmd (WebKitWebView *page, GArray *argv, GString *result) {
     (void)argv;
     (void)result;
     uzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
+    uzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
     run_keycmd(FALSE);
     update_title();
 }
@@ -1315,6 +1318,7 @@ keycmd_nl (WebKitWebView *page, GArray *argv, GString *result) {
     (void)argv;
     (void)result;
     uzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
+    uzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
     run_keycmd(TRUE);
     update_title();
 }
@@ -2273,6 +2277,28 @@ void
 update_title (void) {
     Behaviour *b = &uzbl.behave;
     gchar *parsed;
+    GString* keycmd;
+
+    int len = strlen(uzbl.state.keycmd);
+    //gchar *prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + uzbl.state.keycmd_pos);
+    if (uzbl.state.keycmd_pos < len) {
+            if (uzbl.state.keycmd_pos>0) {
+                keycmd = g_string_new_len(uzbl.state.keycmd, uzbl.state.keycmd_pos);
+                g_string_append(keycmd, "<span underline=\"single\">");
+            } else
+                keycmd = g_string_new("<span underline=\"single\">");
+
+            g_string_append_c(keycmd, uzbl.state.keycmd[uzbl.state.keycmd_pos]);
+            g_string_append(keycmd, "</span>");
+            if (uzbl.state.keycmd_pos < len - 1)
+                g_string_append(keycmd, &uzbl.state.keycmd[uzbl.state.keycmd_pos+1]);
+            uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
+    } else {
+        keycmd = g_string_new(uzbl.state.keycmd);
+        g_string_append(keycmd, "<span underline=\"single\"> </span>");
+        uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
+    }
+
 
     if (b->show_status) {
         if (b->title_format_short) {

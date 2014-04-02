@@ -71,6 +71,7 @@ typedef struct {
     gchar*   searchtx;
     gboolean verbose;
     int      keycmd_pos;
+    gchar*   keycmd_marked;
 } State;
 
 
