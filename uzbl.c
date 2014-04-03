@@ -118,6 +118,7 @@ const struct var_name_to_ptr_t {
     { "inject_html",            PTR_V_STR(uzbl.behave.inject_html,              0,   cmd_inject_html)},
     { "keycmd",                 PTR_V_STR(uzbl.state.keycmd,                    1,   set_keycmd)},
     { "keycmd_marked",          PTR_V_STR(uzbl.state.keycmd_marked,             1,   NULL)},
+    { "keycmd_screen_name",     PTR_V_STR(uzbl.state.keycmd_screen_name,        1,   NULL)},
     { "status_message",         PTR_V_STR(uzbl.gui.sbar.msg,                    1,   update_title)},
     { "show_status",            PTR_V_INT(uzbl.behave.show_status,              1,   cmd_set_status)},
     { "status_top",             PTR_V_INT(uzbl.behave.status_top,               1,   move_statusbar)},
@@ -907,43 +908,43 @@ VIEWFUNC(go_forward)
 /* -- command to callback/function map for things we cannot attach to any signals */
 struct {const char *key; CommandInfo value;} cmdlist[] =
 {   /* key                   function      no_split      */
-    { "back",               {view_go_back, 0}              },
-    { "forward",            {view_go_forward, 0}           },
-    { "scroll_vert",        {scroll_vert, 0}               },
-    { "scroll_horz",        {scroll_horz, 0}               },
-    { "scroll_begin",       {scroll_begin, 0}              },
-    { "scroll_end",         {scroll_end, 0}                },
-    { "reload",             {view_reload, 0},              },
-    { "reload_ign_cache",   {view_reload_bypass_cache, 0}  },
-    { "stop",               {view_stop_loading, 0},        },
-    { "zoom_in",            {view_zoom_in, 0},             }, //Can crash (when max zoom reached?).
-    { "zoom_out",           {view_zoom_out, 0},            },
-    { "toggle_zoom_type",   {toggle_zoom_type, 0},         },
-    { "uri",                {load_uri, TRUE}               },
-    { "js",                 {run_js, TRUE}                 },
-    { "script",             {run_external_js, 0}           },
-    { "toggle_status",      {toggle_status_cb, 0}          },
-    { "spawn",              {spawn, 0}                     },
-    { "sync_spawn",         {spawn_sync, 0}                }, // needed for cookie handler
-    { "sh",                 {spawn_sh, 0}                  },
-    { "sync_sh",            {spawn_sh_sync, 0}             }, // needed for cookie handler
-    { "talk_to_socket",     {talk_to_socket, 0}            },
-    { "exit",               {close_uzbl, 0}                },
-    { "search",             {search_forward_text, TRUE}    },
-    { "search_reverse",     {search_reverse_text, TRUE}    },
-    { "dehilight",          {dehilight, 0}                 },
-    { "toggle_insert_mode", {toggle_insert_mode, 0}        },
-    { "set",                {set_var, TRUE}                },
-  //{ "get",                {get_var, TRUE}                },
-    { "bind",               {act_bind, TRUE}               },
-    { "dump_config",        {act_dump_config, 0}           },
-    { "keycmd",             {keycmd, TRUE}                 },
-    { "keycmd_nl",          {keycmd_nl, TRUE}              },
-    { "keycmd_bs",          {keycmd_bs, 0}                 },
-    { "chain",              {chain, 0}                     },
-    { "print",              {print, TRUE}                  },
-    { "update_gui",         {update_gui, TRUE}           }
-};
+    { "back",               { view_go_back,             0 }    },
+    { "forward",            { view_go_forward,          0 }    },
+    { "scroll_vert",        { scroll_vert,              0 }    },
+    { "scroll_horz",        { scroll_horz,              0 }    },
+    { "scroll_begin",       { scroll_begin,             0 }    },
+    { "scroll_end",         { scroll_end,               0 }    },
+    { "reload",             { view_reload,              0 }    },
+    { "reload_ign_cache",   { view_reload_bypass_cache, 0 }    },
+    { "stop",               { view_stop_loading,        0 }    },
+    { "zoom_in",            { view_zoom_in,             0 }    }, // can crash (when max zoom reached?).
+    { "zoom_out",           { view_zoom_out,            0 }    },
+    { "toggle_zoom_type",   { toggle_zoom_type,         0 }    },
+    { "uri",                { load_uri,                 TRUE } },
+    { "js",                 { run_js,                   TRUE } },
+    { "script",             { run_external_js,          0 }    },
+    { "toggle_status",      { toggle_status_cb,         0 }    },
+    { "spawn",              { spawn,                    0 }    },
+    { "sync_spawn",         { spawn_sync,               0 }    }, // needed for cookie handler
+    { "sh",                 { spawn_sh,                 0 }    },
+    { "sync_sh",            { spawn_sh_sync,            0 }    }, // needed for cookie handler
+    { "talk_to_socket",     { talk_to_socket,           0 }    },
+    { "exit",               { close_uzbl,               0 }    },
+    { "search",             { search_forward_text,      TRUE } },
+    { "search_reverse",     { search_reverse_text,      TRUE } },
+    { "dehilight",          { dehilight,                0 }    },
+    { "toggle_insert_mode", { toggle_insert_mode,       0 }    },
+    { "set",                { set_var,                  TRUE } },
+  //{ "get",                { get_var,                  TRUE } },
+    { "bind",               { act_bind,                 TRUE } },
+    { "dump_config",        { act_dump_config,          0 }    },
+    { "keycmd",             { keycmd,                   TRUE } },
+    { "keycmd_nl",          { keycmd_nl,                TRUE } },
+    { "keycmd_bs",          { keycmd_bs,                0 }    },
+    { "chain",              { chain,                    0 }    },
+    { "print",              { print,                    TRUE } },
+    { "update_gui",         { update_gui,               TRUE } }
+}; 
 
 void
 commands_hash(void)
@@ -967,7 +968,7 @@ free_action(gpointer act) {
 }
 
 Action*
-new_action(const gchar *name, const gchar *param) {
+new_action(const gchar *name, const gchar *param, const gchar *screen_name) {
     Action *action = g_new(Action, 1);
 
     action->name = g_strdup(name);
@@ -975,6 +976,11 @@ new_action(const gchar *name, const gchar *param) {
         action->param = g_strdup(param);
     else
         action->param = NULL;
+
+    if (screen_name)
+        action->screen_name = g_strdup(screen_name);
+    else
+        action->screen_name = NULL;
 
     return action;
 }
@@ -2283,7 +2289,7 @@ update_title (void) {
     //gchar *prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + uzbl.state.keycmd_pos);
     if (uzbl.state.keycmd_pos < len) {
             if (uzbl.state.keycmd_pos>0) {
-                keycmd = g_string_new_len(uzbl.state.keycmd, uzbl.state.keycmd_pos);
+                keycmd = g_string_new_len(uzbl.state.keycmd + uzbl.state.keycmd_act_len, uzbl.state.keycmd_pos - uzbl.state.keycmd_act_len);
                 g_string_append(keycmd, "<span underline=\"single\">");
             } else
                 keycmd = g_string_new("<span underline=\"single\">");
@@ -2294,7 +2300,10 @@ update_title (void) {
                 g_string_append(keycmd, &uzbl.state.keycmd[uzbl.state.keycmd_pos+1]);
             uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
     } else {
-        keycmd = g_string_new(uzbl.state.keycmd);
+        if(uzbl.state.keycmd_act_len>=strlen(uzbl.state.keycmd))
+            keycmd = g_string_new("");
+        else
+            keycmd = g_string_new(uzbl.state.keycmd + uzbl.state.keycmd_act_len);
         g_string_append(keycmd, "<span underline=\"single\"> </span>");
         uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
     }
@@ -2465,20 +2474,29 @@ run_keycmd(const gboolean key_ret) {
     GString* short_keys_inc = g_string_new ("");
     guint i;
     guint len = strlen(uzbl.state.keycmd);
+    if(uzbl.state.keycmd_screen_name) g_free(uzbl.state.keycmd_screen_name);
+    uzbl.state.keycmd_screen_name = NULL;
+    uzbl.state.keycmd_act_len = 0;
     for (i=0; i<len; i++) {
         g_string_append_c(short_keys, uzbl.state.keycmd[i]);
         g_string_assign(short_keys_inc, short_keys->str);
         g_string_append_c(short_keys, '_');
         g_string_append_c(short_keys_inc, '*');
 
-        if (key_ret && (act = g_hash_table_lookup(uzbl.bindings, short_keys->str))) {
-            /* run normal cmds only if return was pressed */
-            exec_paramcmd(act, i);
-            clear_keycmd();
-            tmp = g_strdup_printf("%s %s", act->name, act->param?act->param:"");
-            send_event(COMMAND_EXECUTED, tmp);
-            g_free(tmp);
-            break;
+        if ((act = g_hash_table_lookup(uzbl.bindings, short_keys->str))) {
+            if (key_ret) {
+                /* run normal cmds only if return was pressed */
+                exec_paramcmd(act, i);
+                clear_keycmd();
+                tmp = g_strdup_printf("%s %s", act->name, act->param?act->param:"");
+                send_event(COMMAND_EXECUTED, tmp);
+                g_free(tmp);
+                break;
+            } else {
+                uzbl.state.keycmd_screen_name = g_strdup(act->screen_name);
+                uzbl.state.keycmd_act_len = strlen(short_keys->str) - 1;
+
+            }
         } else if ((act = g_hash_table_lookup(uzbl.bindings, short_keys_inc->str))) {
             if (key_ret)  /* just quit the incremental command on return */
                 clear_keycmd();
@@ -2681,6 +2699,8 @@ run_handler (const gchar *act, const gchar *args) {
 
 void
 add_binding (const gchar *key, const gchar *act) {
+    gchar *screen_name = NULL; 
+    gchar *new_key = g_strdup(key);
     char **parts = g_strsplit(act, " ", 2);
     Action *action;
 
@@ -2690,12 +2710,29 @@ add_binding (const gchar *key, const gchar *act) {
     //Debug:
     if (uzbl.state.verbose)
         printf ("Binding %-10s : %s\n", key, act);
-    action = new_action(parts[0], parts[1]);
 
-    if (g_hash_table_remove (uzbl.bindings, key))
-        g_warning ("Overwriting existing binding for \"%s\"", key);
-    g_hash_table_replace(uzbl.bindings, g_strdup(key), action);
+    if(key) {
+        gchar **left = g_strsplit(key, "<", 2);
+        if(left[1]) {
+            gchar **right = g_strsplit(left[1], ">", 2);
+            if(right[1]) {
+                screen_name = g_strdup(right[0]);
+                new_key = g_strconcat(left[0], right[1], NULL);
+                //printf("----- -%s- -%s- -%s-\n", key, new_key, screen_name);
+            }
+            g_strfreev(right);
+        }
+        g_strfreev(left);
+    }
+
+
+    action = new_action(parts[0], parts[1], screen_name);
+
+    if (g_hash_table_remove (uzbl.bindings, new_key))
+        g_warning ("Overwriting existing binding for \"%s\"", new_key);
+    g_hash_table_replace(uzbl.bindings, g_strdup(new_key), action);
     g_strfreev(parts);
+    g_free(new_key);
 }
 
 /*@null@*/ gchar*

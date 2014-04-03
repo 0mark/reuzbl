@@ -72,6 +72,8 @@ typedef struct {
     gboolean verbose;
     int      keycmd_pos;
     gchar*   keycmd_marked;
+    gchar*   keycmd_screen_name;
+    unsigned int   keycmd_act_len;
 } State;
 
 
@@ -182,6 +184,7 @@ typedef struct {
 typedef struct {
     char* name;
     char* param;
+    char* screen_name;
 } Action;
 
 typedef void sigfunc(int);
@@ -292,7 +295,7 @@ void
 free_action(gpointer act);
 
 Action*
-new_action(const gchar *name, const gchar *param);
+new_action(const gchar *name, const gchar *param, const gchar *screen_name);
 
 bool
 file_exists (const char * filename);
