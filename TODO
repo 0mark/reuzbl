@@ -1,0 +1,7 @@
+- Fix input related todo (see uzbl.c)
+- Better download handler
+- Better session / tabbed thingy without python
+- bind to events
+- bind to key-and-dont-know-eventy-thing (for example dl thing hovered and shit)
+- dmenu follower
+- Better Bookmark thingy

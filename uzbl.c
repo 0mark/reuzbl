@@ -2348,6 +2348,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     (void) window;
 
     // TODO: at least try to make keys configurable heere!
+    // TODO: make it UTF8 compatible
     if(event->type == GDK_KEY_PRESS)
         send_event(KEYPRESS, gdk_keyval_name(event->keyval) );
 
@@ -2412,6 +2413,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     // TODO: KEY DELETE 
     gboolean key_ret = FALSE;
     gboolean key_no_add = FALSE;
+    // TODO: history
     // *KEY* LEFT
     if (event->keyval == GDK_Left && uzbl.state.keycmd_pos>0) {
     	key_no_add = TRUE;
