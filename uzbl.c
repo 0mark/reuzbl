@@ -117,6 +117,7 @@ const struct var_name_to_ptr_t {
     { "verbose",                PTR_V_INT(uzbl.state.verbose,                   1,   NULL)},
     { "inject_html",            PTR_V_STR(uzbl.behave.inject_html,              0,   cmd_inject_html)},
     { "keycmd",                 PTR_V_STR(uzbl.state.keycmd,                    1,   set_keycmd)},
+    { "keycmd_pos",             PTR_V_INT(uzbl.state.keycmd_pos,                1,   NULL)},
     { "keycmd_marked",          PTR_V_STR(uzbl.state.keycmd_marked,             1,   NULL)},
     { "keycmd_screen_name",     PTR_V_STR(uzbl.state.keycmd_screen_name,        1,   NULL)},
     { "status_message",         PTR_V_STR(uzbl.gui.sbar.msg,                    1,   update_title)},
@@ -1037,6 +1038,7 @@ act_dump_config() {
 
 void
 set_keycmd() {
+    uzbl.state.keycmd_pos = strlen(uzbl.state.keycmd);
     run_keycmd(FALSE);
     update_title();
 }
@@ -2409,8 +2411,8 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
         if (str) {
             GString* keycmd = g_string_new(uzbl.state.keycmd);
             g_string_insert(keycmd, uzbl.state.keycmd_pos, str);
-            uzbl.state.keycmd_pos += strlen(str);
             uzbl.state.keycmd = g_string_free(keycmd, FALSE);
+            uzbl.state.keycmd_pos += strlen(str);
             update_title ();
             g_free (str);
         }
@@ -2495,7 +2497,6 @@ run_keycmd(const gboolean key_ret) {
             } else {
                 uzbl.state.keycmd_screen_name = g_strdup(act->screen_name);
                 uzbl.state.keycmd_act_len = strlen(short_keys->str) - 1;
-
             }
         } else if ((act = g_hash_table_lookup(uzbl.bindings, short_keys_inc->str))) {
             if (key_ret)  /* just quit the incremental command on return */
@@ -3038,6 +3039,7 @@ initialize(int argc, char *argv[]) {
 
     uzbl.net.soup_session = webkit_get_default_session();
     uzbl.state.keycmd = g_strdup("");
+    uzbl.state.keycmd_pos = 0;
 
     if(setup_signal(SIGTERM, catch_sigterm) == SIG_ERR)
         fprintf(stderr, "uzbl: error hooking SIGTERM\n");
