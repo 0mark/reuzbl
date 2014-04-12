@@ -1,7 +1,7 @@
-uzbl
-uzbl.o
+/uzbl
+/uzbl.o
 *~
 tags
-examples/data
-examples/config/enchant
+#examples/data
+#examples/config/enchant
 current
