@@ -430,6 +430,25 @@ send_event(int type, const gchar *details) {
     if(type < LAST_EVENT) {
         printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
         fflush(stdout);
+
+
+        // gchar* handler_name = g_strdup_printf("event_%s_handler", event_table[type]);
+
+        Action *act;
+        // gchar *tmp;
+
+        if ((act = g_hash_table_lookup(uzbl.handlers, event_table[type]))) {
+            parse_command(act->name, act->param, NULL);
+        printf("------- %s, %s\n", act->name, act->param);
+
+            // tmp = g_strdup_printf("%s %s", act->name, act->param?act->param:"");
+            // send_event(COMMAND_EXECUTED, tmp);
+            // g_free(tmp);
+            // return;
+        }
+
+        // g_free(handler_name);
+
     }
 }
 
@@ -550,6 +569,7 @@ clean_up(void) {
     g_free(uzbl.state.keycmd);
     uzbl.state.keycmd_pos = 0;
     g_hash_table_destroy(uzbl.bindings);
+    g_hash_table_destroy(uzbl.handlers);
     g_hash_table_destroy(uzbl.behave.commands);
 }
 
@@ -938,6 +958,7 @@ struct {const char *key; CommandInfo value;} cmdlist[] =
     { "set",                { set_var,                  TRUE } },
   //{ "get",                { get_var,                  TRUE } },
     { "bind",               { act_bind,                 TRUE } },
+    { "handle",             { act_handle,              TRUE } },
     { "dump_config",        { act_dump_config,          0 }    },
     { "keycmd",             { keycmd,                   TRUE } },
     { "keycmd_nl",          { keycmd_nl,                TRUE } },
@@ -1026,6 +1047,16 @@ act_bind(WebKitWebView *page, GArray *argv, GString *result) {
     gchar **split = g_strsplit(argv_idx(argv, 0), " = ", 2);
     gchar *value = parseenv(g_strdup(split[1] ? g_strchug(split[1]) : " "));
     add_binding(g_strstrip(split[0]), value);
+    g_free(value);
+    g_strfreev(split);
+}
+
+void
+act_handle(WebKitWebView *page, GArray *argv, GString *result) {
+    (void) page; (void) result;
+    gchar **split = g_strsplit(argv_idx(argv, 0), " = ", 2);
+    gchar *value = parseenv(g_strdup(split[1] ? g_strchug(split[1]) : " "));
+    add_handler(g_strstrip(split[0]), value);
     g_free(value);
     g_strfreev(split);
 }
@@ -2736,6 +2767,44 @@ add_binding (const gchar *key, const gchar *act) {
     g_free(new_key);
 }
 
+void
+add_handler (const gchar *key, const gchar *act) {
+    gchar *screen_name = NULL; 
+    gchar *new_key = g_strdup(key);
+    char **parts = g_strsplit(act, " ", 2);
+    Action *action;
+
+    if (!parts)
+        return;
+
+    //Debug:
+    if (uzbl.state.verbose)
+        printf ("Event %-10s : %s\n", key, act);
+
+    if(key) {
+        gchar **left = g_strsplit(key, "<", 2);
+        if(left[1]) {
+            gchar **right = g_strsplit(left[1], ">", 2);
+            if(right[1]) {
+                screen_name = g_strdup(right[0]);
+                new_key = g_strconcat(left[0], right[1], NULL);
+                //printf("----- -%s- -%s- -%s-\n", key, new_key, screen_name);
+            }
+            g_strfreev(right);
+        }
+        g_strfreev(left);
+    }
+
+
+    action = new_action(parts[0], parts[1], screen_name);
+
+    if (g_hash_table_remove (uzbl.handlers, new_key))
+        g_warning ("Overwriting existing handler for \"%s\"", new_key);
+    g_hash_table_replace(uzbl.handlers, g_strdup(new_key), action);
+    g_strfreev(parts);
+    g_free(new_key);
+}
+
 /*@null@*/ gchar*
 get_xdg_var (XDG_Var xdg) {
     const gchar* actual_value = getenv (xdg.environmental);
@@ -2995,6 +3064,7 @@ void
 dump_config() {
     g_hash_table_foreach(uzbl.comm.proto_var, dump_var_hash, NULL);
     g_hash_table_foreach(uzbl.bindings, dump_key_hash, NULL);
+    g_hash_table_foreach(uzbl.handlers, dump_key_hash, NULL);
 }
 
 void
@@ -3036,6 +3106,7 @@ initialize(int argc, char *argv[]) {
 
     /* initialize hash table */
     uzbl.bindings = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
+    uzbl.handlers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
 
     uzbl.net.soup_session = webkit_get_default_session();
     uzbl.state.keycmd = g_strdup("");

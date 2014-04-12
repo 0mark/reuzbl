@@ -1,3 +1,4 @@
+- handler code is currently a copy of bind code.
 - Fix input related todo (see uzbl.c)
 - Better download handler
 - Better session / tabbed thingy without python

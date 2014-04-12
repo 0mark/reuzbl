@@ -178,6 +178,7 @@ typedef struct {
 
     /* group bindings: key -> action */
     GHashTable* bindings;
+    GHashTable* handlers;
 } Uzbl;
 
 
@@ -421,6 +422,9 @@ run_handler (const gchar *act, const gchar *args);
 void
 add_binding (const gchar *key, const gchar *act);
 
+void
+add_handler (const gchar *key, const gchar *act);
+
 /*@null@*/ gchar*
 get_xdg_var (XDG_Var xdg);
 
@@ -463,6 +467,9 @@ set_var(WebKitWebView *page, GArray *argv, GString *result);
 
 void
 act_bind(WebKitWebView *page, GArray *argv, GString *result);
+
+void
+act_handle(WebKitWebView *page, GArray *argv, GString *result);
 
 void
 act_dump_config();
