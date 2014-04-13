@@ -141,6 +141,8 @@ typedef struct {
     gchar*   insert_indicator;
     gchar*   cmd_indicator;
     gboolean print_version;
+    gchar*   last_event_name;
+    gchar*   last_event_details;
 
     /* command list: (key)name -> (value)Command  */
     GHashTable* commands;

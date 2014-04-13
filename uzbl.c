@@ -120,6 +120,8 @@ const struct var_name_to_ptr_t {
     { "keycmd_pos",             PTR_V_INT(uzbl.state.keycmd_pos,                1,   NULL)},
     { "keycmd_marked",          PTR_V_STR(uzbl.state.keycmd_marked,             1,   NULL)},
     { "keycmd_screen_name",     PTR_V_STR(uzbl.state.keycmd_screen_name,        1,   NULL)},
+    { "last_event_name",        PTR_V_STR(uzbl.behave.last_event_name,          1,   NULL)},
+    { "last_event_details",     PTR_V_STR(uzbl.behave.last_event_details,       1,   NULL)},
     { "status_message",         PTR_V_STR(uzbl.gui.sbar.msg,                    1,   update_title)},
     { "show_status",            PTR_V_INT(uzbl.behave.show_status,              1,   cmd_set_status)},
     { "status_top",             PTR_V_INT(uzbl.behave.status_top,               1,   move_statusbar)},
@@ -431,24 +433,17 @@ send_event(int type, const gchar *details) {
         printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
         fflush(stdout);
 
-
-        // gchar* handler_name = g_strdup_printf("event_%s_handler", event_table[type]);
+        g_free(uzbl.behave.last_event_name);
+        uzbl.behave.last_event_name = g_strdup(event_table[type]);
+        g_free(uzbl.behave.last_event_details);
+        uzbl.behave.last_event_details = g_strdup(details);
 
         Action *act;
-        // gchar *tmp;
-
         if ((act = g_hash_table_lookup(uzbl.handlers, event_table[type]))) {
-            parse_command(act->name, act->param, NULL);
-        printf("------- %s, %s\n", act->name, act->param);
-
-            // tmp = g_strdup_printf("%s %s", act->name, act->param?act->param:"");
-            // send_event(COMMAND_EXECUTED, tmp);
-            // g_free(tmp);
-            // return;
+            gchar* param = expand(act->param, 0);
+            parse_command(act->name, param, NULL);
+            g_free(param);
         }
-
-        // g_free(handler_name);
-
     }
 }
 
