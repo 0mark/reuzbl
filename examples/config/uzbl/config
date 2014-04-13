@@ -4,21 +4,26 @@
 # keyboard behavior in this sample config is sort of vimstyle
 
 # Handlers
-set download_handler    = spawn $XDG_DATA_HOME/uzbl/scripts/download.sh
-set cookie_handler      = spawn $XDG_DATA_HOME/uzbl/scripts/cookies.py
-#set new_window         = sh 'echo uri "$8" > $4' # open in same window
-set new_window          = sh 'uzbl -u $8' # equivalent to the default behaviour
-set scheme_handler      = spawn $XDG_DATA_HOME/uzbl/scripts/scheme.py
-set load_start_handler  = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
-set load_commit_handler = set status_message = <span foreground="green">recv</span>
-set load_finish_handler = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/history.sh'
+#handle NEW_WINDOW       = sh 'echo uri "@last_event_details" > $4' # open in same window
+handle NEW_WINDOW       = sh 'uzbl -u "@last_event_details"' # equivalent to the default behaviour
+
+handle SCHEME_REQUEST   = sync_spawn $XDG_DATA_HOME/uzbl/scripts/scheme.py @last_event_details
+handle LOAD_START       = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
+handle LOAD_COMMIT      = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/get_per_site_js_ext.pl' 'sh echo "taburi $2 @uri" > /tmp/uzbltreetab'
+handle LOAD_FINISH      = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/history.sh'
+
+handle COOKIE           = sync_spawn $XDG_DATA_HOME/uzbl/scripts/cookies.py @last_event_details
+
+handle TITLE_CHANGED    = sh 'echo "tabtitle $2 @last_event_details" > /tmp/uzbltreetab'
+
+handle DOWNLOAD_REQUEST = spawn $XDG_DATA_HOME/uzbl/scripts/download.sh @last_event_details @proxy_url
 
 
 
 # Behaviour and appearance
 set show_status         = 1
 set status_background   = #303030
-set status_format       = <span font_family="monospace"><span background="khaki" foreground="black">[\@[\@MODE]\@]</span> [<span weight="bold" foreground="red">\@keycmd_marked</span>] <span foreground="#606060"> \@[\@LOAD_PROGRESSBAR]\@ </span><span foreground="#99FF66">\@[\@uri]\@</span> <span foreground="khaki">\@[\@NAME]\@</span>   <span foreground="orange">\@status_message</span><span foreground="#606060"> \@[\@SELECTED_URI]\@</span></span>
+set status_format       = <span font_family="monospace"><span background="khaki" foreground="black">[\@[\@MODE]\@]</span> [<span weight="bold" foreground="red">\@keycmd_screen_name\@keycmd_marked</span>] <span foreground="#606060"> \@[\@LOAD_PROGRESSBAR]\@ </span><span foreground="#99FF66">\@[\@uri]\@</span> <span foreground="khaki">\@[\@NAME]\@</span>   <span foreground="orange">\@status_message</span><span foreground="#606060"> \@[\@SELECTED_URI]\@</span></span>
 set status_top          = 0
 set insert_indicator    = I
 set command_indicator   = C
@@ -30,59 +35,200 @@ set shell_cmd         = sh -c
 
 # Keyboard interface
 set modkey = Mod1
-# like this you can enter any command at runtime, interactively. prefixed by ':'
-bind    :_        = chain '%s'
 
-bind    j         = scroll_vert 20
-bind    k         = scroll_vert -20
-bind    h         = scroll_horz -20
-bind    l         = scroll_horz 20
-bind    <<        = scroll_begin
-bind    >>        = scroll_end
-bind    b         = back
-bind    m         = forward
-bind    S         = stop
-bind    r         = reload
-bind    R         = reload_ign_cache
-bind    +         = zoom_in
-bind    -         = zoom_out
-bind    T         = toggle_zoom_type
-bind    1         = sh "echo set zoom_level = 1.0 > $4"
-bind    2         = sh "echo set zoom_level = 2.0 > $4"
-bind    t         = toggle_status
-bind    /*        = search %s
-bind    ?*        = search_reverse %s
-#jump to next
-bind    n         = search
-bind    N         = search_reverse
-bind    gh        = uri http://www.uzbl.org
-# shortcut to set the uri. TODO: i think we can abandon the uri command in favor of 'set uri = ..'
-bind    o _       = uri %s
-# shortcut to set variables
-bind    s _       = set %s
-bind    \wiki _   = uri http://wiki.archlinux.org/index.php/Special:Search?search=%s&go=Go
-bind    gg _      = uri http://www.google.com/search?q=%s
-bind    i         = toggle_insert_mode
-# disable insert mode (1 to enable).  note that Esc works to disable, regardless of this setting
-bind    I         = toggle_insert_mode 0
-# Enclose the executable in quotes if it has spaces.  Any additional parameters you use will
-# appear AFTER the default parameters
-bind    B         = spawn $XDG_DATA_HOME/uzbl/scripts/insert_bookmark.sh
-bind    U         = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_history.sh
-bind    u         = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_bookmarks.sh
-# with the sample yank script, you can yank one of the arguments into clipboard/selection
-bind    yurl      = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 6 primary
-bind    ytitle    = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 7 clipboard
-# does the same as yurl but without needing a script
-bind    y2url     = sh 'echo -n $6 | xclip'
-# go the page from primary selection
-bind    p         = sh 'echo "uri `xclip -selection primary -o`" > $4'
-# go to the page in clipboard
-bind    P         = sh 'echo "uri `xclip -selection clipboard -o`" > $4'
-# start a new uzbl instance from the page in primary selection
-bind    'p        = sh 'exec uzbl --uri $(xclip -o)'
-bind    ZZ        = exit
-bind    Xs         = js alert("hi");
+#   " § $ % &   ( ) =   `
+# 1 2 3 4 5 6 7 8 9 0   '
+#  q       t   u   o p ü  
+#                     ö ä #
+#                m       <
+
+
+
+## Cursor
+# jlik  -> left/right, up/down
+# JLIK  -> fast left/right, top/bottom
+# adws  -> history prev/next, in-site perv/next link
+# ADWS  -> count last number in url up/down, directory up/down (sort of)
+
+## Mnemonics
+# g,G   -> GOTO normal, editing
+# f     -> FOLLOW
+# r,R   -> RELOAD (ign cache)
+# n,p   -> FIND next / prev
+# b,B   -> BOOKMARK
+# h     -> HISTORY
+# e*    -> EDIT
+# z,Z   -> ZOOM
+
+## Well known
+# /,\   -> search (backwards)
+# :     -> command line
+# c,C   -> copy (url,title)
+# v,V   -> paste (clip/selection)
+
+## Symbolic
+# x     -> stop
+# +,-   -> zoom
+# ?     -> search engines
+
+## Other
+# ;     -> set
+# ! -> special commands
+# y     -> formfiller
+
+# ****** cursor like keys (i,j,k,l,a,d,s,w)
+# jlik  -> left/right, up/down
+bind    j                   = scroll_horz -20
+bind    l                   = scroll_horz 20
+bind    i                   = scroll_vert -20
+bind    k                   = scroll_vert 20
+# JLIK  -> fast left/right, top/bottom
+bind    J                   = scroll_horiz 0
+#bind    L                   = scroll horizontal end
+bind    I                   = scroll_begin
+bind    K                   = scroll_end
+# adws  -> history prev/next, in-site perv/next link
+bind    a                   = back
+bind    d                   = forward
+bind    w                   = sh 'echo "next" > /tmp/uzbltreetab'
+bind    s                   = sh 'echo "prev" > /tmp/uzbltreetab'
+# ADWS  -> count last number in url up/down, directory up/down (sort of)
+bind    A                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js next
+bind    D                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js prev
+bind    W                   = sh '$XDG_DATA_HOME/uzbl/scripts/go-down-dir.pl $6 > $4'
+bind    S                   = sh 'echo "set uri = $(dirname $6)" > $4'
+
+# ****** mnemonic keys (g,f,r,n,p,b,h,e,z)
+# g,G  -> GOTO normal, editing
+bind    g<uri: >_           = uri %s
+bind    G                   = set keycmd = g @uri
+# f    -> FOLLOW
+bind    f                   = spawn $XDG_DATA_HOME/uzbl/scripts/follow-dmenu.pl
+# r,R  -> RELOAD (ign cache)
+bind    r                   = reload
+bind    R                   = reload_ign_cache
+# n,p  -> FIND next / prev
+bind    n                   = search
+bind    p                   = search_reverse
+# b,B  -> BOOKMARK
+bind    B                   = spawn $XDG_DATA_HOME/uzbl/scripts/insert_bookmark.pl zenity
+bind    b                   = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_bookmarks.sh
+# h    -> HISTORY
+bind    h                   = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_history.sh
+# e*   -> EDIT
+set follow_hint_keys = 0123456789
+bind    e*                  = script $XDG_DATA_HOME/uzbl/scripts/follow_mod.js 'forms @follow_hint_keys %s'
+# z,Z  -> ZOOM
+bind    Z                   = toggle_zoom_type
+bind    z                   = set zoom_level 1.0
+
+# ****** well-known keys (/,\,:,c,v)
+# /,\  -> search (backwards)
+bind    /*                  = search %s
+bind    \\*                 = search_reverse %s
+# :     -> command line
+bind    :_                  = chain '%s'
+# c,C  -> COPY (url, title)
+bind    c                   = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 6 primary
+bind    C                   = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 7 primary
+# v,V  -> paste (selection/clipboard)
+bind    v                   = sh 'echo "uri `xclip -selection primary -o`" | socat - unix-connect:$5
+bind    V                   = sh 'echo "uri `xclip -selection clipboard -o`" | socat - unix-connect:$5
+#                             sh 'echo "uri `xclip -selection primary -o`" > $4'
+
+# ****** symbolic keys (x,+,-,?)
+# x    -> stop
+bind    x                   = stop
+# +,-  -> zoom in/out
+bind    +                   = zoom_in
+bind    -                   = zoom_out
+# ?    -> search engines
+bind    ?ar<Arch Wiki:>_    = uri http://wiki.archlinux.org/index.php/Special:Search?search=%s&go=Go
+bind    ?au<AUR:>_          = uri http://aur.archlinux.org/packages.php?O=0&K=%s&do_Search=Go
+bind    ?gg<Google:>_       = uri http://www.google.com/search?q=%s
+bind    ?u<packpapier:>_    = uri http://search.unserver.de/index.php?query=%s
+bind    ?de<WiDE:>_         = uri http://de.wikipedia.org/w/index.php?search=%s&go=Artikel
+bind    ?en<WiEN:>_         = uri http://en.wikipedia.org/w/index.php?search=%s&go=Go
+bind    ?le<Dict:>_         = uri http://dict.leo.org/ende?lp=ende&lang=de&searchLoc=0&cmpType=relaxed&sectHdr=on&spellToler=on&chinese=both&pinyin=diacritic&search=%s&relink=on
+
+## other keys (;,!,y)
+# ;     -> set
+bind    ;_                  = set %s
+# !    -> special functions
+bind    !y<Genre:>_         = sh '/home/mark/bin/ydl.sh "%s" "Various Youtube" "" "$7" "" "$6"'
+# y    -> formfiller
+bind    y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl load %s
+bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl edit %s
+
+# t,T... -> Tab/Branch
+bind    tn                  = sh 'echo "new" > /tmp/uzbltreetab'
+bind    Tn                  = sh 'echo "cnew" > /tmp/uzbltreetab'
+bind    tv                  = sh 'echo "new `xclip -selection primary -o`" > /tmp/uzbltreetab'
+bind    Tv                  = sh 'echo "cnew `xclip -selection primary -o`" > /tmp/uzbltreetab'
+bind    tV                  = sh 'echo "new `xclip -selection clipboard -o`" > /tmp/uzbltreetab'
+bind    TV                  = sh 'echo "cnew `xclip -selection clipboard -o`" > /tmp/uzbltreetab'
+bind    tg<uri:>_           = sh 'echo "new %s" > /tmp/uzbltreetab'
+bind    Tg<uri:>_           = sh 'echo "cnew %s" > /tmp/uzbltreetab'
+bind    tG<uri:\@uri>_      = sh 'echo "new %s" > /tmp/uzbltreetab'
+bind    TG<uri:\@uri>_      = sh 'echo "cnew %s" > /tmp/uzbltreetab'
+bind    tx                  = sh 'echo "close" > /tmp/uzbltreetab'
+bind    Tx                  = sh 'echo "treeclose" > /tmp/uzbltreetab'
+bind    tg_                 = sh 'echo "goto %s" > /tmp/uzbltreetab'
+bind    0                   = sh 'echo "goto 0" > /tmp/uzbltreetab'
+bind    1                   = sh 'echo "goto 1" > /tmp/uzbltreetab'
+bind    2                   = sh 'echo "goto 2" > /tmp/uzbltreetab'
+bind    3                   = sh 'echo "goto 3" > /tmp/uzbltreetab'
+bind    4                   = sh 'echo "goto 4" > /tmp/uzbltreetab'
+bind    5                   = sh 'echo "goto 5" > /tmp/uzbltreetab'
+bind    6                   = sh 'echo "goto 6" > /tmp/uzbltreetab'
+bind    7                   = sh 'echo "goto 7" > /tmp/uzbltreetab'
+bind    8                   = sh 'echo "goto 8" > /tmp/uzbltreetab'
+bind    9                   = sh 'echo "goto 9" > /tmp/uzbltreetab'
+bind    tm_                 = sh 'echo "move %s" > /tmp/uzbltreetab'
+bind    ta_                 = sh 'echo "attach %s" > /tmp/uzbltreetab'
+bind    th                  = sh 'echo "hidetree" > /tmp/uzbltreetab'
+bind    ts                  = sh 'echo "showtree" > /tmp/uzbltreetab'
+
+
+
+
+
+
+bind    ms                  = spawn $XDG_DATA_HOME/uzbl/scripts/per_site_settings.pl
+
+## combinded keys
+#@bind    <Ctrl>s             = spawn $XDG_DATA_HOME/uzbl/scripts/per_site_settings.pl
+#@bind    <Ctrl>q             = exit
+#@bind    <Ctrl>t             = toggle_status
+#@bind    <Ctrl>i             = @toggle_modes command insert
+#set external_editor = leafpad
+#menu_editable_add Open in @external_editor = script $XDG_DATA_HOME/uzbl/scripts/extedit.js
+#@bind    <Ctrl>e             = script $XDG_DATA_HOME/uzbl/scripts/extedit.js
+
+
+#--------------------------------------------------------------------------------
+#bind  s<var:>_<value:>_  = set %1 = %2
+#bind  !reload            = sh "sed '/^# === Post-load misc commands/,$d' $1 > $4"
+## Uzbl Terminal. TODO explain why this is useful
+#bind  <Ctrl><Alt>t  = sh 'xterm -e "socat unix-connect:$5 -"'
+
+
+
+
+
+
+
+
+
+
+
+###bind    t         = toggle_status
+###bind    gh        = uri http://www.uzbl.org
+###bind    i         = toggle_insert_mode
+###bind    I         = toggle_insert_mode 0
+###bind    'p        = sh 'exec uzbl --uri $(xclip -o)'
+###bind    ZZ        = exit
+###bind    Xs         = js alert("hi");
 # example showing how to use sh
 # it sends a command to the fifo, whose path is told via a positional param
 # if fifo_dir is not set, it'll echo to a file named (null) somewhere >:) remember to delete it
@@ -90,31 +236,31 @@ bind    Xs         = js alert("hi");
 # you must enclose it in quotes.  Remember to escape (and double-escape) quotes and backslashes
 # in the body.  Any additional parameters you use will appear AFTER the default parameters (cfg file
 # path, fifo & socket dirs, etc.)
-bind    XS        = sh 'echo "js alert (\\"This is sent by the shell via a fifo\\")" > "$4"'
+###bind    XS        = sh 'echo "js alert (\\"This is sent by the shell via a fifo\\")" > "$4"'
 
-bind    !dump     = sh "echo dump_config > $4"
-bind    !reload   = sh 'cat $1 > $4'
+###bind    !dump     = sh "echo dump_config > $4"
+###bind    !reload   = sh 'cat $1 > $4'
 
 # this script allows you to configure (per domain) values to fill in form fields (eg login information) and to fill in these values automatically
-bind za = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh
-bind ze = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh edit
-bind zn = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh new
-bind zl = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh load
+###bind za = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh
+###bind ze = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh edit
+###bind zn = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh new
+###bind zl = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh load
 
 # other - more advanced - implementation using perl: (could not get this to run - Dieter )
-bind LL = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl load
-bind LN = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl new
-bind LE = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl edit
+###bind LL = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl load
+###bind LN = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl new
+###bind LE = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl edit
 
 # we ship some javascripts to do keyboard based link hinting/following.  (webkit does not have C DOM bindings yet)
 # this is similar to how it works in vimperator (and konqueror)
 # TODO: did we resolve: "no click() event for hyperlinks so no referrer set" ?
 #hit F to toggle the Hints (now in form of link numbering)
-bind    F = script $XDG_DATA_HOME/uzbl/scripts/hint.js
+###bind    F = script $XDG_DATA_HOME/uzbl/scripts/hint.js
 # the most stable version:
-bind    fl* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers.js %s
+###bind    fl* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers.js %s
 # using strings, not polished yet:
-bind    fL* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers_Strings.js %s
+###bind    fL* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers_Strings.js %s
 
 
 # "home" page if you will
