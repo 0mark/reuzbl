@@ -139,13 +139,13 @@ const struct var_name_to_ptr_t {
     { "always_insert_mode",     PTR_V_INT(uzbl.behave.always_insert_mode,       1,   cmd_always_insert_mode)},
     { "reset_command_mode",     PTR_V_INT(uzbl.behave.reset_command_mode,       1,   NULL)},
     { "modkey",                 PTR_V_STR(uzbl.behave.modkey,                   1,   cmd_modkey)},
-    { "load_finish_handler",    PTR_V_STR(uzbl.behave.load_finish_handler,      1,   NULL)},
-    { "load_start_handler",     PTR_V_STR(uzbl.behave.load_start_handler,       1,   NULL)},
-    { "load_commit_handler",    PTR_V_STR(uzbl.behave.load_commit_handler,      1,   NULL)},
-    { "download_handler",       PTR_V_STR(uzbl.behave.download_handler,         1,   NULL)},
-    { "cookie_handler",         PTR_V_STR(uzbl.behave.cookie_handler,           1,   cmd_cookie_handler)},
-    { "new_window",             PTR_V_STR(uzbl.behave.new_window,               1,   NULL)},
-    { "scheme_handler",         PTR_V_STR(uzbl.behave.scheme_handler,           1,   cmd_scheme_handler)},
+    // { "load_finish_handler",    PTR_V_STR(uzbl.behave.load_finish_handler,      1,   NULL)},
+    // { "load_start_handler",     PTR_V_STR(uzbl.behave.load_start_handler,       1,   NULL)},
+    // { "load_commit_handler",    PTR_V_STR(uzbl.behave.load_commit_handler,      1,   NULL)},
+    // { "download_handler",       PTR_V_STR(uzbl.behave.download_handler,         1,   NULL)},
+    // { "cookie_handler",         PTR_V_STR(uzbl.behave.cookie_handler,           1,   cmd_cookie_handler)},
+    // { "new_window",             PTR_V_STR(uzbl.behave.new_window,               1,   NULL)},
+    // { "scheme_handler",         PTR_V_STR(uzbl.behave.scheme_handler,           1,   cmd_scheme_handler)},
     { "fifo_dir",               PTR_V_STR(uzbl.behave.fifo_dir,                 1,   cmd_fifo_dir)},
     { "socket_dir",             PTR_V_STR(uzbl.behave.socket_dir,               1,   cmd_socket_dir)},
     { "http_debug",             PTR_V_INT(uzbl.behave.http_debug,               1,   cmd_http_debug)},
@@ -216,6 +216,7 @@ const char *event_table[LAST_EVENT] = {
      "COOKIE"           ,
      "NEW_WINDOW"       ,
      "SELECTION_CHANGED",
+     "SCHEME_REQUEST"   ,
 
 };
 
@@ -598,11 +599,13 @@ navigation_decision_cb (WebKitWebView *web_view, WebKitWebFrame *frame, WebKitNe
     if (uzbl.state.verbose)
         printf("Navigation requested -> %s\n", uri);
 
-    if (uzbl.behave.scheme_handler) {
+    // if (uzbl.behave.scheme_handler) {
+    if (g_hash_table_lookup(uzbl.handlers, "SCHEME_REQUEST")) {
         GString *s = g_string_new ("");
         g_string_printf(s, "'%s'", uri);
 
-        run_handler(uzbl.behave.scheme_handler, s->str);
+        //run_handler(uzbl.behave.scheme_handler, s->str);
+        send_event(SCHEME_REQUEST, s->str);
 
         if(uzbl.comm.sync_stdout && strcmp (uzbl.comm.sync_stdout, "") != 0) {
             char *p = strchr(uzbl.comm.sync_stdout, '\n' );
@@ -675,23 +678,23 @@ gboolean
 download_cb (WebKitWebView *web_view, GObject *download, gpointer user_data) {
     (void) web_view;
     (void) user_data;
-    if (uzbl.behave.download_handler) {
-        const gchar* uri = webkit_download_get_uri ((WebKitDownload*)download);
-        if (uzbl.state.verbose)
-            printf("Download -> %s\n",uri);
-        /* if urls not escaped, we may have to escape and quote uri before this call */
+    // if (uzbl.behave.download_handler) {
+    //     const gchar* uri = webkit_download_get_uri ((WebKitDownload*)download);
+    //     if (uzbl.state.verbose)
+    //         printf("Download -> %s\n",uri);
+    //     /* if urls not escaped, we may have to escape and quote uri before this call */
 
-        GString *args = g_string_new(uri);
+    //     GString *args = g_string_new(uri);
 
-        if (uzbl.net.proxy_url) {
-           g_string_append_c(args, ' ');
-           g_string_append(args, uzbl.net.proxy_url);
-        }
+    //     if (uzbl.net.proxy_url) {
+    //        g_string_append_c(args, ' ');
+    //        g_string_append(args, uzbl.net.proxy_url);
+    //     }
 
-        run_handler(uzbl.behave.download_handler, args->str);
+    //     run_handler(uzbl.behave.download_handler, args->str);
 
-        g_string_free(args, TRUE);
-    }
+    //     g_string_free(args, TRUE);
+    // }
     send_event(DOWNLOAD_REQ, webkit_download_get_uri ((WebKitDownload*)download));
     return (FALSE);
 }
@@ -847,8 +850,8 @@ load_finish_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
     (void) page;
     (void) data;
 
-    if (uzbl.behave.load_finish_handler)
-        run_handler(uzbl.behave.load_finish_handler, "");
+    // if (uzbl.behave.load_finish_handler)
+    //     run_handler(uzbl.behave.load_finish_handler, "");
 
     send_event(LOAD_FINISH, webkit_web_frame_get_uri(frame));
 }
@@ -865,8 +868,8 @@ load_start_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
     (void) frame;
     (void) data;
     uzbl.gui.sbar.load_progress = 0;
-    if (uzbl.behave.load_start_handler)
-        run_handler(uzbl.behave.load_start_handler, "");
+    // if (uzbl.behave.load_start_handler)
+    //     run_handler(uzbl.behave.load_start_handler, "");
 
     send_event(LOAD_START, uzbl.state.uri);
 }
@@ -895,8 +898,8 @@ load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
         set_insert_mode(uzbl.behave.always_insert_mode);
         update_title();
     }
-    if (uzbl.behave.load_commit_handler)
-        run_handler(uzbl.behave.load_commit_handler, uzbl.state.uri);
+    // if (uzbl.behave.load_commit_handler)
+    //     run_handler(uzbl.behave.load_commit_handler, uzbl.state.uri);
 
     /* event message */
     send_event(LOAD_COMMIT, webkit_web_frame_get_uri (frame));
@@ -1295,10 +1298,11 @@ dehilight (WebKitWebView *page, GArray *argv, GString *result) {
 
 void
 new_window_load_uri (const gchar * uri) {
-    if (uzbl.behave.new_window) {
+    // if (uzbl.behave.new_window) {
+    if (g_hash_table_lookup(uzbl.handlers, "NEW_WINDOW")) {
         GString *s = g_string_new ("");
         g_string_printf(s, "'%s'", uri);
-        run_handler(uzbl.behave.new_window, s->str);
+        // run_handler(uzbl.behave.new_window, s->str);
         send_event(NEW_WINDOW, s->str);
         return;
     }
@@ -2900,11 +2904,12 @@ void handle_cookies (SoupSession *session, SoupMessage *msg, gpointer user_data)
     GString *s = g_string_new ("");
     SoupURI * soup_uri = soup_message_get_uri(msg);
     g_string_printf(s, "GET '%s' '%s' '%s'", soup_uri->scheme, soup_uri->host, soup_uri->path);
-    if(uzbl.behave.cookie_handler)
-        run_handler(uzbl.behave.cookie_handler, s->str);
+    // if(uzbl.behave.cookie_handler)
+    //     run_handler(uzbl.behave.cookie_handler, s->str);
     send_event(COOKIE, s->str);
 
-    if(uzbl.behave.cookie_handler &&
+    // if(uzbl.behave.cookie_handler &&
+    if(g_hash_table_lookup(uzbl.handlers, "COOKIE") &&
             uzbl.comm.sync_stdout && strcmp (uzbl.comm.sync_stdout, "") != 0) {
         char *p = strchr(uzbl.comm.sync_stdout, '\n' );
         if ( p != NULL ) *p = '\0';
@@ -2927,7 +2932,7 @@ save_cookies (SoupMessage *msg, gpointer user_data){
         SoupURI * soup_uri = soup_message_get_uri(msg);
         GString *s = g_string_new ("");
         g_string_printf(s, "PUT '%s' '%s' '%s' '%s'", soup_uri->scheme, soup_uri->host, soup_uri->path, cookie);
-        run_handler(uzbl.behave.cookie_handler, s->str);
+        //run_handler(uzbl.behave.cookie_handler, s->str);
         send_event(COOKIE, s->str);
         g_free (cookie);
         g_string_free(s, TRUE);
