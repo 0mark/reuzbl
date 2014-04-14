@@ -431,8 +431,10 @@ void
 send_event(int type, const gchar *details) {
 
     if(type < LAST_EVENT) {
-        printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
-        fflush(stdout);
+        if (uzbl.state.verbose) {
+            printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
+            fflush(stdout);
+        }
 
         g_free(uzbl.behave.last_event_name);
         uzbl.behave.last_event_name = g_strdup(event_table[type]);
@@ -2476,7 +2478,8 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
         uzbl.state.keycmd = g_string_free(keycmd, FALSE);
         if(strlen(event->string)) uzbl.state.keycmd_pos++;
     }
-    printf("%d, %d, %d, '%s', '%s'\n", uzbl.state.keycmd_pos, (int)strlen(uzbl.state.keycmd), (int)strlen(event->string), event->string, uzbl.state.keycmd);
+    if (uzbl.state.verbose)
+        printf("%d, %d, %d, '%s', '%s'\n", uzbl.state.keycmd_pos, (int)strlen(uzbl.state.keycmd), (int)strlen(event->string), event->string, uzbl.state.keycmd);
 
     run_keycmd(key_ret);
     update_title();
