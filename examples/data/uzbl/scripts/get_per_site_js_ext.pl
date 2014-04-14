@@ -7,7 +7,6 @@ use IO::Socket::UNIX;
 
 sub Socket {
   my $path = shift;
-  print ">$path\n";
   # connect the socket
   my $socket = IO::Socket::UNIX->new(Type => SOCK_STREAM, Peer => $path) or die $@;
   return sub {

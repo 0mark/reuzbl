@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # vim: fileencoding=utf-8
 
 # This program is free software. It comes without any warranty, to
@@ -95,6 +95,9 @@ class Cookie:
 			raise CookieLineIsComment
 
 		if s[0] == " ":
+			raise CookieLineIsComment
+
+		if s[0] == "#":
 			raise CookieLineIsComment
 
 		self.line = s[:-1]

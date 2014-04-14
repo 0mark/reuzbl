@@ -12,6 +12,8 @@ which $clip &>/dev/null || exit 1
 [ "x$9" = xprimary -o "x$9" = xsecondary -o "x$9" = xclipboard ] || exit 2
 
 value=`eval "echo -n \\${$8}"` # bash: value = ${!8}
+notify-send $9 ${value}
+echo ${value} | $clip -selection $9
 
-echo "echo -n '${value}' | $clip -selection $9"
-echo -n "'${value}' | $clip -selection $9"
+#echo "echo -n '${value}' | $clip -selection $9"
+#echo -n "'${value}' | $clip -selection $9"
