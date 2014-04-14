@@ -176,6 +176,8 @@ Besides the builtin variables you can also define your own ones and use them in 
   - verbose: affects output on stdout
   - inject_html
   - keycmd: holds the input buffer (callback: update input buffer)
+  - keycmd_marked: copy of the input buffer with the cursor position marked
+  - keycmd_screen_name: name of the current command
   - status_message (callback: update title)
   - show_status: show statusbar or not
   - status_top: statusbar on top?
@@ -193,13 +195,6 @@ Besides the builtin variables you can also define your own ones and use them in 
   - always_insert_mode: set this to true if you don't like modal (vim-like) interfaces
   - reset_command_mode: automatically revert to command mode on pageload (unless always_insert_mode is set)
   - modkey: modkey which can be pressed to activate keybind from inside insert mode
-  - load_finish_handler
-  - load_start_handler
-  - load_commit_handler
-  - download_handler
-  - cookie_handler
-  - new_window: handler to execute to invoke new uzbl window (TODO better name)
-  - scheme_handler: handler to execute for each URI navigated to - the navigation request will be ignored if handler prints "USED\n"
   - fifo_dir: location to store fifo's
   - socket_dir: location to store sockets
   - http_debug: http debug mode (value 0-3)
@@ -230,7 +225,8 @@ Besides the builtin variables you can also define your own ones and use them in 
   - fantasy_font_family = "Pterra"
   - serif_font_family = serif (example "DejaVu Serif")
   - sans_serif_font_family = sans (example "DejaVu Sans")
-
+  - last_event_name: name of the last event
+  - last_event_details: details of the last event
 
 * Constants (not dumpable or writeable):
   - WEBKIT_MAJOR: set at compile time
@@ -351,31 +347,34 @@ Handler scripts that are called by uzbl are passed the following arguments:
     $7 current page title
     .. [ script specific ] (optional)
 
-The script specific arguments are this:
-
-* add bookmark:
-
-    none
-
-* download:
-
-    $8 url of item to download
-    $9 url of http proxy (optional)
-
-* cookie handler
-
-    $8 GET/PUT
-    $9 request address scheme (e.g. http or https)
-    $10 request address host (if current page url is www.foo.com/somepage, this could be something else than foo, eg advertising from another host)
-    $11 request address path
-    $12 cookie (only with PUT requests)
-
-* scheme handler:
-
-    $8 URI of the page to be navigated to
-
-
 Custom, userdefined scripts (`spawn foo bar`) get first the arguments as specified in the config and then the above 7 are added at the end.
+
+### HANDLERS
+Handlers are called when a event of the same name occures. Currently these events exist:
+
+  - LOAD_START
+  - LOAD_COMMIT
+  - LOAD_FINISH
+  - LOAD_ERROR
+  - KEYPRESS
+  - DOWNLOAD_REQUEST: details contain uri to download
+  - COMMAND_EXECUTED
+  - LINK_HOVER
+  - TITLE_CHANGED: details contain new title
+  - GEOMETRY_CHANGED
+  - WEBINSPECTOR
+  - COOKIE: cookie handler
+    details:
+      GET/PUT
+      request address scheme (e.g. http or https)
+      request address host (if current page url is www.foo.com/somepage, this could be something else than foo, eg advertising from another host)
+      request address path
+      cookie (only with PUT requests)
+  - NEW_WINDOW
+  - SELECTION_CHANGED
+  - SCHEME_REQUEST
+    executed for each URI navigated to (in details) - the navigation request will be ignored if handler prints "USED\n"
+
 
 ### JAVASCRIPT HELPER OBJECT
 
