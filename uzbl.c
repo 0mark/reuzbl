@@ -504,7 +504,7 @@ gchar*
 parseenv (char* string) {
     extern char** environ;
     gchar* tmpstr = NULL;
-    int i = 0;
+    unsigned int i = 0;
 
     // Expand variables from ENV
     while (environ[i] != NULL) {
