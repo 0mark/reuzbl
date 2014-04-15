@@ -1,47 +1,48 @@
-# first entries are for gnu make, 2nd for BSD make.  see http://lists.uzbl.org/pipermail/uzbl-dev-uzbl.org/2009-July/000177.html
+LIBS      := $(shell pkg-config --cflags gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0)
+ARCH      := $(shell uname -m)
+COMMIT    := $(shell git log | head -n1 | sed "s/.* //")
+DEBUG     := -ggdb -Wall -W -DG_ERRORCHECK_MUTEXES
 
-CFLAGS:=-std=c99 $(shell pkg-config --cflags gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0) -ggdb -Wall -W -DARCH="\"$(shell uname -m)\"" -lgthread-2.0 -DG_ERRORCHECK_MUTEXES -DCOMMIT="\"$(shell git log | head -n1 | sed "s/.* //")\"" $(CPPFLAGS) -fPIC -W -Wall -Wextra -pedantic -ggdb3
-CFLAGS!=echo -std=c99 `pkg-config --cflags gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0` -ggdb -Wall -W -DARCH='"\""'`uname -m`'"\""' -lgthread-2.0 -DG_ERRORCHECK_MUTEXES -DCOMMIT='"\""'`git log | head -n1 | sed "s/.* //"`'"\""' $(CPPFLAGS) -fPIC -W -Wall -Wextra -pedantic -ggdb3
+CFLAGS    := -std=c99 $(LIBS) $(DEBUG) -DARCH="\"$(ARCH)\"" -DCOMMIT="\"$(COMMIT)\"" -fPIC -Wextra -pedantic -ggdb3
+LDFLAGS   := $(shell pkg-config --libs gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0) -pthread $(LDFLAGS)
 
-LDFLAGS:=$(shell pkg-config --libs gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0) -pthread $(LDFLAGS)
-LDFLAGS!=echo `pkg-config --libs gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2.0` -pthread $(LDFLAGS)
+PREFIX    ?= $(DESTDIR)/usr
+BINDIR    ?= $(PREFIX)/bin
+UZBLDATA  ?= $(PREFIX)/share/uzbl
+DOCSDIR   ?= $(PREFIX)/share/uzbl/docs
+EXMPLSDIR ?= $(PREFIX)/share/uzbl/examples
 
 all: uzbl
 
-PREFIX?=$(DESTDIR)/usr/local
+uzbl: uzbl.c uzbl.h config.h
 
-# When compiling unit tests, compile uzbl as a library first
-tests: uzbl.o
-	$(CC) -DUZBL_LIBRARY -shared -Wl uzbl.o -o ./tests/libuzbl.so
-	cd ./tests/; $(MAKE)
+%: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LIBS) -o $@ $<
 
 test: uzbl
-	./uzbl --uri http://www.uzbl.org --verbose
+	./uzbl --uri http://www.uzbl.org
 
-test-dev: uzbl
-	XDG_DATA_HOME=./examples/data               XDG_CONFIG_HOME=./examples/config               ./uzbl --uri http://www.uzbl.org --verbose
+test-config: uzbl
+	./uzbl --uri http://www.uzbl.org < examples/configs/sampleconfig-dev
 
-test-share: uzbl
-	XDG_DATA_HOME=${PREFIX}/share/uzbl/examples/data XDG_CONFIG_HOME=${PREFIX}/share/uzbl/examples/config ./uzbl --uri http://www.uzbl.org --verbose
-
+test-config-real: uzbl
+	./uzbl --uri http://www.uzbl.org < $(EXMPLSDIR)/configs/sampleconfig
 
 clean:
 	rm -f uzbl
-	rm -f uzbl.o
-	cd ./tests/; $(MAKE) clean
 
 install:
-	install -d $(PREFIX)/bin
-	install -d $(PREFIX)/share/uzbl/docs
-	install -d $(PREFIX)/share/uzbl/examples
-	install -m755 uzbl $(PREFIX)/bin/uzbl
-	cp -rp docs     $(PREFIX)/share/uzbl/
-	cp -rp config.h $(PREFIX)/share/uzbl/docs/
-	cp -rp examples $(PREFIX)/share/uzbl/
-	install -m644 AUTHORS $(PREFIX)/share/uzbl/docs
-	install -m644 README  $(PREFIX)/share/uzbl/docs
+	install -d $(BINDIR)
+	install -d $(DOCSDIR)
+	install -d $(EXMPLSDIR)
+	install -D -m755 uzbl $(BINDIR)/uzbl
+	cp -ax docs/*   $(DOCSDIR)
+	cp -ax config.h $(DOCSDIR)
+	cp -ax examples/* $(EXMPLSDIR)
+	install -D -m644 AUTHORS $(DOCSDIR)
+	install -D -m644 README $(DOCSDIR)
 
 
 uninstall:
-	rm -rf $(PREFIX)/bin/uzbl
-	rm -rf $(PREFIX)/share/uzbl
+	rm -rf $(BINDIR)/uzbl
+	rm -rf $(UZBLDATA)
