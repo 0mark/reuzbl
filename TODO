@@ -1,8 +1,21 @@
-- handler code is currently a copy of bind code.
-- Fix input related todo (see uzbl.c)
-- Better download handler
-- Better session / tabbed thingy without python
-- bind to events
-- bind to key-and-dont-know-eventy-thing (for example dl thing hovered and shit)
-- dmenu follower
-- Better Bookmark thingy
+- core
+ - use webkit2?
+   (only with abominable gtk3, but webkit1 support might drop)
+ - event binder
+  - code is currently a copy of bind code
+  - naming scheme is bad
+ - keycmd
+  - Fix input related todo (see uzbl.c)
+  - bind to key-and-dont-know-eventy-thing
+    (for example dl thing hovered and shit)
+
+- scripts
+ - Better download handler
+ - Better Bookmark thingy
+ - encrypt formfiller data
+ - cookie handler with a lot of fast
+
+- treetab
+ - compile from uzbls make file
+  - better: compile with uzbls make file
+ - rewrite in plain c
