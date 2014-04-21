@@ -6,13 +6,14 @@
 # Handlers
 handle SCHEME_REQUEST       = sync_spawn $XDG_DATA_HOME/uzbl/scripts/scheme.sh @last_event_details
 handle LOAD_START           = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
-handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/get_per_site_js_ext.pl'
+handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/get_per_site_js_ext.pl' 'sh "echo taburi $2 @uri > /tmp/tabster"'
 handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/history.sh'
     
-#handle NEW_WINDOW           = sh 'echo uri "@last_event_details" > $4'                # open in same window
-handle NEW_WINDOW           = sh 'uzbl -u "@last_event_details"'                      # equivalent to the default behaviour
+handle NEW_WINDOW           = sh 'echo "new @last_event_details" > /tmp/tabster'  # open in tab below current tab
     
 handle COOKIE               = sync_spawn $XDG_DATA_HOME/uzbl/scripts/cookies.py @last_event_details
+    
+handle TITLE_CHANGED        = sh 'echo "tabtitle $2 @last_event_details" > /tmp/tabster'
     
 handle DOWNLOAD_REQUEST     = spawn $XDG_DATA_HOME/uzbl/scripts/download.sh @last_event_details @proxy_url
 
@@ -87,6 +88,8 @@ bind    K                   = scroll_end
 # adws  -> history prev/next, in-site perv/next link
 bind    a                   = back
 bind    d                   = forward
+bind    w                   = sh 'echo "prev" > /tmp/tabster'
+bind    s                   = sh 'echo "next" > /tmp/tabster'
 # ADWS  -> count last number in url up/down, directory up/down (sort of)
 bind    A                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js next
 bind    D                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js prev
@@ -116,6 +119,34 @@ bind    e*                  = script $XDG_DATA_HOME/uzbl/scripts/follow_mod.js '
 # z,Z  -> ZOOM
 bind    Z                   = toggle_zoom_type
 bind    z                   = set zoom_level 1.0
+# t,T... -> Tab/Branch
+bind    tn                  = sh 'echo "new uzbl -s %d" > /tmp/tabster'
+#bind    Tn                  = sh 'echo "cnew" > /tmp/tabster'
+bind    tv                  = sh 'echo "new uzbl -s %d `xclip -selection primary -o`" > /tmp/tabster'
+#bind    Tv                  = sh 'echo "cnew `xclip -selection primary -o`" > /tmp/tabster'
+bind    tV                  = sh 'echo "new uzbl -s %d `xclip -selection clipboard -o`" > /tmp/tabster'
+#bind    TV                  = sh 'echo "cnew `xclip -selection clipboard -o`" > /tmp/tabster'
+bind    tg<uri: >_          = sh 'echo "new uzbl -s %%d -u %s" > /tmp/tabster'
+#bind    Tg<uri: >_          = sh 'echo "cnew %s" > /tmp/tabster'
+bind    tG                  = set keycmd = tg @uri
+#bind    TG                  = set keycmd = Tg @uri
+bind    tx                  = sh 'echo "close" > /tmp/tabster'
+#bind    Tx                  = sh 'echo "treeclose" > /tmp/tabster'
+#bind    tg_                 = sh 'echo "goto %s" > /tmp/tabster'
+bind    0                   = sh 'echo "goto 0" > /tmp/tabster'
+bind    1                   = sh 'echo "goto 1" > /tmp/tabster'
+bind    2                   = sh 'echo "goto 2" > /tmp/tabster'
+bind    3                   = sh 'echo "goto 3" > /tmp/tabster'
+bind    4                   = sh 'echo "goto 4" > /tmp/tabster'
+bind    5                   = sh 'echo "goto 5" > /tmp/tabster'
+bind    6                   = sh 'echo "goto 6" > /tmp/tabster'
+bind    7                   = sh 'echo "goto 7" > /tmp/tabster'
+bind    8                   = sh 'echo "goto 8" > /tmp/tabster'
+bind    9                   = sh 'echo "goto 9" > /tmp/tabster'
+bind    tm_                 = sh 'echo "move %s" > /tmp/tabster'
+bind    ta_                 = sh 'echo "attach %s" > /tmp/tabster'
+bind    th                  = sh 'echo "hidetree" > /tmp/tabster'
+bind    ts                  = sh 'echo "showtree" > /tmp/tabster'
 
 # ****** well-known keys (/,\,:,c,v)
 # /,\  -> search (backwards)
@@ -124,13 +155,9 @@ bind    \\*                 = search_reverse %s
 # :     -> command line
 bind    :_                  = chain '%s'
 # c,C  -> COPY (url, title)
-#bind    c                   = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 6 primary
-#bind    C                   = spawn $XDG_DATA_HOME/uzbl/scripts/yank.sh 7 primary
 bind    c                   = 'echo "@uri" | xclip -selection primary'
 bind    C                   = 'echo "@uri" | xclip -selection clipboard'
 # v,V  -> paste (selection/clipboard)
-#bind    v                   = sh 'echo "uri `xclip -selection primary -o`" | socat - unix-connect:$5
-#bind    V                   = sh 'echo "uri `xclip -selection clipboard -o`" | socat - unix-connect:$5
 bind    v                   = sh 'echo "uri `xclip -selection primary -o`" > $4'
 bind    V                   = sh 'echo "uri `xclip -selection clipboard -o`" > $4'
 
