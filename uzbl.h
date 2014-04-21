@@ -181,6 +181,7 @@ typedef struct {
     /* group bindings: key -> action */
     GHashTable* bindings;
     GHashTable* handlers;
+    GHashTable* buttons;
 } Uzbl;
 
 
@@ -195,10 +196,10 @@ typedef void sigfunc(int);
 /* Event system */
 enum event_type {
     LOAD_START, LOAD_COMMIT, LOAD_FINISH, LOAD_ERROR,
-    KEYPRESS, DOWNLOAD_REQ, COMMAND_EXECUTED,
+    DOWNLOAD_REQ, COMMAND_EXECUTED,
     LINK_HOVER, TITLE_CHANGED, GEOMETRY_CHANGED, 
     WEBINSPECTOR, COOKIE, NEW_WINDOW, SELECTION_CHANGED,
-    SCHEME_REQUEST,
+    SCHEME_REQUEST, BUTTONPRESS,
     
     /* must be last entry */
     LAST_EVENT
@@ -428,6 +429,9 @@ add_binding (const gchar *key, const gchar *act);
 void
 add_handler (const gchar *key, const gchar *act);
 
+void
+add_button (const gchar *key, const gchar *act);
+
 /*@null@*/ gchar*
 get_xdg_var (XDG_Var xdg);
 
@@ -473,6 +477,9 @@ act_bind(WebKitWebView *page, GArray *argv, GString *result);
 
 void
 act_handle(WebKitWebView *page, GArray *argv, GString *result);
+
+void
+act_button(WebKitWebView *page, GArray *argv, GString *result);
 
 void
 act_dump_config();

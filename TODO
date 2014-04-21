@@ -4,6 +4,9 @@
  - event binder
   - code is currently a copy of bind code
   - naming scheme is bad
+ - button binder
+  - code is currently a copy of bind code
+  - naming scheme is bad
  - keycmd
   - Fix input related todo (see uzbl.c)
   - bind to key-and-dont-know-eventy-thing

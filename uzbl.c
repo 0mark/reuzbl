@@ -206,7 +206,7 @@ const char *event_table[LAST_EVENT] = {
      "LOAD_COMMIT"      , 
      "LOAD_FINISH"      , 
      "LOAD_ERROR"       , 
-     "KEYPRESS"         , 
+     // "KEYPRESS"         , 
      "DOWNLOAD_REQUEST" , 
      "COMMAND_EXECUTED" ,
      "LINK_HOVER"       ,
@@ -217,7 +217,7 @@ const char *event_table[LAST_EVENT] = {
      "NEW_WINDOW"       ,
      "SELECTION_CHANGED",
      "SCHEME_REQUEST"   ,
-
+     "BUTTONPRESS",
 };
 
 
@@ -429,7 +429,6 @@ expand(const char *s, guint recurse) {
 */
 void
 send_event(int type, const gchar *details) {
-
     if(type < LAST_EVENT) {
         if (uzbl.state.verbose) {
             printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
@@ -568,6 +567,7 @@ clean_up(void) {
     uzbl.state.keycmd_pos = 0;
     g_hash_table_destroy(uzbl.bindings);
     g_hash_table_destroy(uzbl.handlers);
+    g_hash_table_destroy(uzbl.buttons);
     g_hash_table_destroy(uzbl.behave.commands);
 }
 
@@ -959,6 +959,7 @@ struct {const char *key; CommandInfo value;} cmdlist[] =
   //{ "get",                { get_var,                  TRUE } },
     { "bind",               { act_bind,                 TRUE } },
     { "handle",             { act_handle,              TRUE } },
+    { "button",             { act_button,              TRUE } },
     { "dump_config",        { act_dump_config,          0 }    },
     { "keycmd",             { keycmd,                   TRUE } },
     { "keycmd_nl",          { keycmd_nl,                TRUE } },
@@ -1057,6 +1058,16 @@ act_handle(WebKitWebView *page, GArray *argv, GString *result) {
     gchar **split = g_strsplit(argv_idx(argv, 0), " = ", 2);
     gchar *value = parseenv(g_strdup(split[1] ? g_strchug(split[1]) : " "));
     add_handler(g_strstrip(split[0]), value);
+    g_free(value);
+    g_strfreev(split);
+}
+
+void
+act_button(WebKitWebView *page, GArray *argv, GString *result) {
+    (void) page; (void) result;
+    gchar **split = g_strsplit(argv_idx(argv, 0), " = ", 2);
+    gchar *value = parseenv(g_strdup(split[1] ? g_strchug(split[1]) : " "));
+    add_button(g_strstrip(split[0]), value);
     g_free(value);
     g_strfreev(split);
 }
@@ -2385,16 +2396,37 @@ configure_event_cb(GtkWidget* window, GdkEventConfigure* event) {
 }
 
 gboolean
+button_press_cb (GtkWidget* window, GdkEventButton* event) {
+    (void) window;
+
+    if(event->type == GDK_BUTTON_PRESS) {
+        Action *act;
+        gchar* button = g_strdup_printf("%d", event->button);
+        //printf("%d, %s\n", event->button, button);
+        if ((act = g_hash_table_lookup(uzbl.buttons, button))) {
+            gchar* param = expand(act->param, 0);
+            //printf("%s, %s, %s\n", act->name, act->param, param);
+
+            parse_command(act->name, param, NULL);
+            g_free(param);
+            return TRUE;
+        }
+        g_free(button);
+    }
+    return FALSE;
+}
+
+// TODO: make it UTF8 compatible
+gboolean
 key_press_cb (GtkWidget* window, GdkEventKey* event) {
     //TRUE to stop other handlers from being invoked for the event. FALSE to propagate the event further.
 
     (void) window;
 
-    // TODO: at least try to make keys configurable heere!
-    // TODO: make it UTF8 compatible
-    if(event->type == GDK_KEY_PRESS)
-        send_event(KEYPRESS, gdk_keyval_name(event->keyval) );
+    // if(event->type == GDK_KEY_PRESS)
+    //     send_event(KEYPRESS, gdk_keyval_name(event->keyval) );
 
+    // TODO: at least try to make keys configurable heere!
     if (event->type   != GDK_KEY_PRESS ||
         event->keyval == GDK_Page_Up   ||
         event->keyval == GDK_Page_Down ||
@@ -2572,20 +2604,28 @@ create_browser () {
 
     g->web_view = WEBKIT_WEB_VIEW (webkit_web_view_new ());
 
-    g_signal_connect (G_OBJECT (g->web_view), "notify::title", G_CALLBACK (title_change_cb), NULL);
-    g_signal_connect (G_OBJECT (g->web_view), "selection-changed", G_CALLBACK (selection_changed_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "load-progress-changed", G_CALLBACK (progress_change_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "load-committed", G_CALLBACK (load_commit_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "load-started", G_CALLBACK (load_start_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "load-finished", G_CALLBACK (load_finish_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "load-error", G_CALLBACK (load_error_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "hovering-over-link", G_CALLBACK (link_hover_cb), g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "notify::title",                        G_CALLBACK (title_change_cb),        NULL);
+      // TODO: WHY ? "signal::title-changed",                        (GCallback)title_change_cb,         NULL,
+    g_signal_connect (G_OBJECT (g->web_view), "selection-changed",                    G_CALLBACK (selection_changed_cb),   g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "load-progress-changed",                G_CALLBACK (progress_change_cb),     g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "load-committed",                       G_CALLBACK (load_commit_cb),         g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "load-started",                         G_CALLBACK (load_start_cb),          g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "load-finished",                        G_CALLBACK (load_finish_cb),         g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "load-error",                           G_CALLBACK (load_error_cb),          g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "hovering-over-link",                   G_CALLBACK (link_hover_cb),          g->web_view);
     g_signal_connect (G_OBJECT (g->web_view), "navigation-policy-decision-requested", G_CALLBACK (navigation_decision_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "new-window-policy-decision-requested", G_CALLBACK (new_window_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "download-requested", G_CALLBACK (download_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "create-web-view", G_CALLBACK (create_web_view_cb), g->web_view);
-    g_signal_connect (G_OBJECT (g->web_view), "mime-type-policy-decision-requested", G_CALLBACK (mime_policy_cb), g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "new-window-policy-decision-requested", G_CALLBACK (new_window_cb),          g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "download-requested",                   G_CALLBACK (download_cb),            g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "create-web-view",                      G_CALLBACK (create_web_view_cb),     g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "mime-type-policy-decision-requested",  G_CALLBACK (mime_policy_cb),         g->web_view);
+    g_signal_connect (G_OBJECT (g->web_view), "button-press-event",                   G_CALLBACK (button_press_cb),        g->web_view);
+      // TODO: hmmmm ?
+      // "signal::populate-popup",                       (GCallback)populate_popup_cb,       NULL,
+      // "signal::focus-in-event",                       (GCallback)focus_cb,                NULL,
+      // "signal::focus-out-event",                      (GCallback)focus_cb,                NULL,
 }
+
+
 
 GtkWidget*
 create_mainbar () {
@@ -2781,7 +2821,7 @@ add_handler (const gchar *key, const gchar *act) {
 
     //Debug:
     if (uzbl.state.verbose)
-        printf ("Event %-10s : %s\n", key, act);
+        printf ("Handler %-10s : %s\n", key, act);
 
     if(key) {
         gchar **left = g_strsplit(key, "<", 2);
@@ -2803,6 +2843,44 @@ add_handler (const gchar *key, const gchar *act) {
     if (g_hash_table_remove (uzbl.handlers, new_key))
         g_warning ("Overwriting existing handler for \"%s\"", new_key);
     g_hash_table_replace(uzbl.handlers, g_strdup(new_key), action);
+    g_strfreev(parts);
+    g_free(new_key);
+}
+
+void
+add_button (const gchar *key, const gchar *act) {
+    gchar *screen_name = NULL; 
+    gchar *new_key = g_strdup(key);
+    char **parts = g_strsplit(act, " ", 2);
+    Action *action;
+
+    if (!parts)
+        return;
+
+    //Debug:
+    if (uzbl.state.verbose)
+        printf ("Button %-10s : %s\n", key, act);
+
+    if(key) {
+        gchar **left = g_strsplit(key, "<", 2);
+        if(left[1]) {
+            gchar **right = g_strsplit(left[1], ">", 2);
+            if(right[1]) {
+                screen_name = g_strdup(right[0]);
+                new_key = g_strconcat(left[0], right[1], NULL);
+                //printf("----- -%s- -%s- -%s-\n", key, new_key, screen_name);
+            }
+            g_strfreev(right);
+        }
+        g_strfreev(left);
+    }
+
+
+    action = new_action(parts[0], parts[1], screen_name);
+
+    if (g_hash_table_remove (uzbl.buttons, new_key))
+        g_warning ("Overwriting existing button for \"%s\"", new_key);
+    g_hash_table_replace(uzbl.buttons, g_strdup(new_key), action);
     g_strfreev(parts);
     g_free(new_key);
 }
@@ -3068,6 +3146,7 @@ dump_config() {
     g_hash_table_foreach(uzbl.comm.proto_var, dump_var_hash, NULL);
     g_hash_table_foreach(uzbl.bindings, dump_key_hash, NULL);
     g_hash_table_foreach(uzbl.handlers, dump_key_hash, NULL);
+    g_hash_table_foreach(uzbl.buttons, dump_key_hash, NULL);
 }
 
 void
@@ -3110,6 +3189,7 @@ initialize(int argc, char *argv[]) {
     /* initialize hash table */
     uzbl.bindings = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
     uzbl.handlers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
+    uzbl.buttons = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
 
     uzbl.net.soup_session = webkit_get_default_session();
     uzbl.state.keycmd = g_strdup("");
