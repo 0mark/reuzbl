@@ -239,7 +239,7 @@ Besides the builtin variables you can also define your own ones and use them in 
   - TITLE
   - SELECTED_URI
   - MODE
-  - NAME: name of the uzbl instance (Xorg window id, unless set by cmdline arg) (TODO: can't we make this a variable?)
+  - NAME: name of the uzbl instance (Xorg window id or pid when embed, unless set by cmdline arg) (TODO: can't we make this a variable?)
 
 
 ### VARIABLE EXPANSION AND COMMAND/JAVA SCRIPT SUBSTITUTION
@@ -413,7 +413,7 @@ Copying the Uzbl object and creating public functions should be taken with care 
     uzbl [ uri ]
     -u, --uri=URI            Uri to load at startup (equivalent to 'uzbl <uri>' or 'set uri = URI' after uzbl has launched)
     -v, --verbose            Whether to print all messages or just errors.
-    -n, --name=NAME          Name of the current instance (defaults to Xorg window id)
+    -n, --name=NAME          Name of the current instance (defaults to Xorg window id or pid when embed)
     -c, --config=FILE        Path to config file or '-' for stdin
     -s, --socket=SOCKET      Socket ID
     -g, --geometry=GEOMETRY  Set window geometry (format: WIDTHxHEIGHT+-X+-Y)

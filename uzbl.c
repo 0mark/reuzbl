@@ -72,7 +72,7 @@ GOptionEntry entries[] =
     { "verbose",  'v', 0, G_OPTION_ARG_NONE,   &uzbl.state.verbose,
         "Whether to print all messages or just errors.", NULL },
     { "name",     'n', 0, G_OPTION_ARG_STRING, &uzbl.state.instance_name,
-        "Name of the current instance (defaults to Xorg window id)", "NAME" },
+        "Name of the current instance (defaults to Xorg window id or pid when embed)", "NAME" },
     { "config",   'c', 0, G_OPTION_ARG_STRING, &uzbl.state.config_file,
         "Path to config file or '-' for stdin", "FILE" },
     { "socket",   's', 0, G_OPTION_ARG_INT, &uzbl.state.socket_id,
@@ -3255,8 +3255,12 @@ main (int argc, char* argv[]) {
         uzbl.xwin = GDK_WINDOW_XID (GTK_WIDGET (uzbl.gui.main_window)->window);
     }
 
-    if(!uzbl.state.instance_name)
-        uzbl.state.instance_name = itos((int)uzbl.xwin);
+    if(!uzbl.state.instance_name) {
+        if(uzbl.xwin)
+            uzbl.state.instance_name = itos((int)uzbl.xwin);
+        else
+            uzbl.state.instance_name = itos(getpid());
+    }
 
     gtk_widget_grab_focus (GTK_WIDGET (uzbl.gui.web_view));
 
