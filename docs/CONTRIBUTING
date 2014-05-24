@@ -1,6 +1,6 @@
 ### Users
 
-Just use Uzbl, hang around in our IRC channel, try out different things and report bugs.
+Just use reUzbl, hang around in our IRC channel, try out different things and report bugs.
 If you're feeling more adventurous, you can use one of the development branches and give bug
 reports and suggestions straight to the developer in charge of that, so the
 same problems don't occur when they get merged into the master branch.
@@ -12,7 +12,7 @@ You may also find mistakes in our documentation.
 
 If you don't feel like just sending bug reports, you can dive into the
 code and start hacking.
-Even if you're not good at C, thanks to uzbl's 'ecosystem' of scripts there
+Even if you're not good at C, thanks to reuzbl's 'ecosystem' of scripts there
 is a lot that can be done.
 However, it's usually a good idea to tell us first
 what you want to do, to avoid unneeded or duplicate work.
@@ -25,7 +25,7 @@ Read on for more info...
    Either you host your git repo yourself, or use something userfriendly
    like [Github](http://www.github.com)
    If you want to use github, you basically just need to register and click
-   the fork button on [Dieterbe/uzbl](http://github.com/Dieterbe/uzbl)
+   the fork button on [Dieterbe/reuzbl](http://github.com/Dieterbe/reuzbl)
    If you're new to Git/github, have no fear:
 
    * [Github guides (highly recommended)](http://github.com/guides/home)
@@ -37,7 +37,7 @@ Read on for more info...
    All contributors develop in their experimental or other specific branches,
    which get merged into the mainline experimental, and after QA it gets merged into the main master.
 
-3. If you think your code should be in the main uzbl code and meets all
+3. If you think your code should be in the main reuzbl code and meets all
    requirements (see below), then ask Dieter to merge it.
 
    * send a mail to the mailing list with subject "`Pull request: <title>`"
@@ -79,19 +79,19 @@ Before making a new ticket, check whether the bug is reported already.
 If you want to report a bug and you don't know where the problem in the code
 is, please supply:
 
-* version (commit hash) (see `uzbl --version`)
+* version (commit hash) (see `reuzbl --version`)
 * operating system
 * versions of libsoup, webkit, gtk.
-* output of uzbl --verbose (with http_debug set, if relevant)
+* output of reuzbl --verbose (with http_debug set, if relevant)
 
 ### Valgrind profiling
 	$ add this to Makefile header: CFLAGS=-g
 	$ recompile
-	$ valgrind --tool=callgrind ./uzbl ....
+	$ valgrind --tool=callgrind ./reuzbl ....
 	$ kcachegrind callgrind.out.foo
 
 ### Memory leak checking
-    valgrind --tool=memcheck --leak-check=full ./uzbl
+    valgrind --tool=memcheck --leak-check=full ./reuzbl
 
 ### Writing unit tests
 
@@ -103,7 +103,7 @@ Run all tests with `make tests`
 ### Debugging / backtraces
 
 * compile with -ggdb (enabled by default on experimental tree)
-* run: `gdb ./uzbl`
+* run: `gdb ./reuzbl`
 * `(gdb) run -c /path/to/config`
 * `bt` if it segfaults to see a backtrace
 * you'll find more info on the interwebs

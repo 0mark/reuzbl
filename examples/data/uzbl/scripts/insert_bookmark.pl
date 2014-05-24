@@ -3,7 +3,7 @@
 use IPC::Open2;
 use strict;
 
-my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/uzbl/bookmarks';
+my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/reuzbl/bookmarks';
 my $purl = $ARGV[5];
 my $ptitle = $ARGV[6];
 my $guithingy = $ARGV[7] ? $ARGV[7] : '';

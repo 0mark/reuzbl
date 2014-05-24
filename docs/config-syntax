@@ -3,7 +3,7 @@ readme: end-user instructions
 
 
 Rationale. AKA "why not config files?"
--> unify code to configure uzbl and to accept incoming commands
+-> unify code to configure reuzbl and to accept incoming commands
 -> no more code needed for config file parsing/handling
 -> runtime changing of configuration
 

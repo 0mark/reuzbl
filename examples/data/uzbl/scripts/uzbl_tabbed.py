@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Uzbl tabbing wrapper using a fifo socket interface
+# reUzbl tabbing wrapper using a fifo socket interface
 # Copyright (c) 2009, Tom Adams <tom@holizz.com>
 # Copyright (c) 2009, Chris van Dijk <cn.vandijk@hotmail.com>
 # Copyright (c) 2009, Mason Larobina <mason.larobina@gmail.com>
@@ -21,19 +21,19 @@
 
 # Author(s):
 #   Tom Adams <tom@holizz.com>
-#       Wrote the original uzbl_tabbed.py as a proof of concept.
+#       Wrote the original reuzbl_tabbed.py as a proof of concept.
 #
 #   Chris van Dijk (quigybo) <cn.vandijk@hotmail.com>
-#       Made signifigant headway on the old uzbl_tabbing.py script on the
-#       uzbl wiki <http://www.uzbl.org/wiki/uzbl_tabbed>
+#       Made signifigant headway on the old reuzbl_tabbing.py script on the
+#       reuzbl wiki <http://www.reuzbl.org/wiki/reuzbl_tabbed>
 #
 #   Mason Larobina <mason.larobina@gmail.com>
-#       Rewrite of the uzbl_tabbing.py script to use a fifo socket interface
-#       and inherit configuration options from the user's uzbl config.
+#       Rewrite of the reuzbl_tabbing.py script to use a fifo socket interface
+#       and inherit configuration options from the user's reuzbl config.
 #
 # Contributor(s):
 #   mxey <mxey@ghosthacking.net>
-#       uzbl_config path now honors XDG_CONFIG_HOME if it exists.
+#       reuzbl_config path now honors XDG_CONFIG_HOME if it exists.
 #
 #   Romain Bignon <romain@peerfuse.org>
 #       Fix for session restoration code.
@@ -52,16 +52,16 @@
 #   pygobject - GLib's GObject bindings for python.
 #
 # Optional dependencies:
-#   simplejson - save uzbl_tabbed.py sessions & presets in json.
+#   simplejson - save reuzbl_tabbed.py sessions & presets in json.
 #
 # Note: I haven't included version numbers with this dependency list because
-# I've only ever tested uzbl_tabbed.py on the latest stable versions of these
+# I've only ever tested reuzbl_tabbed.py on the latest stable versions of these
 # packages in Gentoo's portage. Package names may vary on different systems.
 
 
 # Configuration:
-# Because this version of uzbl_tabbed is able to inherit options from your main
-# uzbl configuration file you may wish to configure uzbl tabbed from there.
+# Because this version of reuzbl_tabbed is able to inherit options from your main
+# reuzbl configuration file you may wish to configure reuzbl tabbed from there.
 # Here is a list of configuration options that can be customised and some
 # example values for each:
 #
@@ -84,12 +84,12 @@
 # Session options:
 #   save_session            = 1
 #   json_session            = 0
-#   session_file            = $HOME/.local/share/uzbl/session
+#   session_file            = $HOME/.local/share/reuzbl/session
 #
-# Inherited uzbl options:
+# Inherited reuzbl options:
 #   fifo_dir                = /tmp
 #   socket_dir              = /tmp
-#   icon_path               = $HOME/.local/share/uzbl/uzbl.png
+#   icon_path               = $HOME/.local/share/reuzbl/reuzbl.png
 #   status_background       = #303030
 #
 # Misc options:
@@ -115,7 +115,7 @@
 #   bind_del_preset         = gdel _
 #   bind_list_presets       = glist
 #
-# And uzbl_tabbed.py takes care of the actual binding of the commands via each
+# And reuzbl_tabbed.py takes care of the actual binding of the commands via each
 # instances fifo socket.
 #
 # Custom tab styling:
@@ -138,7 +138,7 @@
 
 # Issues:
 #   - new windows are not caught and opened in a new tab.
-#   - when uzbl_tabbed.py crashes it takes all the children with it.
+#   - when reuzbl_tabbed.py crashes it takes all the children with it.
 #   - when a new tab is opened when using gtk tabs the tab button itself
 #     grabs focus from its child for a few seconds.
 #   - when switch_to_new_tabs is not selected the notebook page is
@@ -154,7 +154,7 @@
 #   - add the small tab-list display when both gtk tabs and text vim-like
 #     tablist are hidden (I.e. [ 1 2 3 4 5 ])
 #   - check spelling.
-#   - pass a uzbl socketid to uzbl_tabbed.py and have it assimilated into
+#   - pass a reuzbl socketid to reuzbl_tabbed.py and have it assimilated into
 #     the collective. Resistance is futile!
 
 
@@ -201,30 +201,30 @@ def xdghome(key, default):
     return os.path.join(os.environ['HOME'], default)
 
 # Setup xdg paths.
-DATA_DIR = os.path.join(xdghome('DATA', '.local/share/'), 'uzbl/')
-CONFIG_DIR = os.path.join(xdghome('CONFIG', '.config/'), 'uzbl/')
+DATA_DIR = os.path.join(xdghome('DATA', '.local/share/'), 'reuzbl/')
+CONFIG_DIR = os.path.join(xdghome('CONFIG', '.config/'), 'reuzbl/')
 
-# Ensure uzbl xdg paths exist
+# Ensure reuzbl xdg paths exist
 for path in [DATA_DIR, CONFIG_DIR]:
     if not os.path.exists(path):
         os.makedirs(path)
 
-# Path to uzbl config
-UZBL_CONFIG = os.path.join(CONFIG_DIR, 'config')
-if not os.path.exists(UZBL_CONFIG):
-    error("cannot find uzbl config file at %r" % UZBL_CONFIG)
+# Path to reuzbl config
+REUZBL_CONFIG = os.path.join(CONFIG_DIR, 'config')
+if not os.path.exists(REUZBL_CONFIG):
+    error("cannot find reuzbl config file at %r" % REUZBL_CONFIG)
     sys.exit(1)
 
-# All of these settings can be inherited from your uzbl config file.
+# All of these settings can be inherited from your reuzbl config file.
 config = {
   # Tab options
-  'show_tablist':           True,   # Show text uzbl like statusbar tab-list
+  'show_tablist':           True,   # Show text reuzbl like statusbar tab-list
   'show_gtk_tabs':          False,  # Show gtk notebook tabs
   'tablist_top':            True,   # Display tab-list at top of window
   'gtk_tab_pos':            'top',  # Gtk tab position (top|left|bottom|right)
   'gtk_refresh':            1000,   # Tablist refresh millisecond interval
   'switch_to_new_tabs':     True,   # Upon opening a new tab switch to it
-  'capture_new_windows':    True,   # Use uzbl_tabbed to catch new windows
+  'capture_new_windows':    True,   # Use reuzbl_tabbed to catch new windows
   'multiline_tabs':         True,   # Tabs overflow onto new tablist lines.
 
   # Tab title options
@@ -239,10 +239,10 @@ config = {
   'saved_sessions_dir':     os.path.join(DATA_DIR, 'sessions/'),
   'session_file':           os.path.join(DATA_DIR, 'session'),
 
-  # Inherited uzbl options
-  'fifo_dir':               '/tmp', # Path to look for uzbl fifo.
-  'socket_dir':             '/tmp', # Path to look for uzbl socket.
-  'icon_path':              os.path.join(DATA_DIR, 'uzbl.png'),
+  # Inherited reuzbl options
+  'fifo_dir':               '/tmp', # Path to look for reuzbl fifo.
+  'socket_dir':             '/tmp', # Path to look for reuzbl socket.
+  'icon_path':              os.path.join(DATA_DIR, 'reuzbl.png'),
   'status_background':      "#303030", # Default background for all panels.
 
   # Misc options
@@ -270,8 +270,8 @@ config = {
 
   # Add custom tab style definitions to be used by the tab colour policy
   # handler here. Because these are added to the config dictionary like
-  # any other uzbl_tabbed configuration option remember that they can
-  # be superseeded from your main uzbl config file.
+  # any other reuzbl_tabbed configuration option remember that they can
+  # be superseeded from your main reuzbl config file.
   'tab_colours':            'foreground = "#888" background = "#303030"',
   'tab_text_colours':       'foreground = "#bbb"',
   'selected_tab':           'foreground = "#fff"',
@@ -291,18 +291,18 @@ config = {
 #   from mycustomtabbingconfig import colour_selector
 # Remember to rename, delete or comment out this function if you do that.
 
-def colour_selector(tabindex, currentpage, uzbl):
+def colour_selector(tabindex, currentpage, reuzbl):
     '''Tablist styling policy handler. This function must return a tuple of
     the form (tab style, text style).'''
 
     # Just as an example:
-    # if 'error' in uzbl.title:
+    # if 'error' in reuzbl.title:
     #     if tabindex == currentpage:
     #         return ('foreground="#fff"', 'foreground="red"')
     #     return ('foreground="#888"', 'foreground="red"')
 
     # Style tabs to indicate connected via https.
-    if config['tab_indicate_https'] and uzbl.uri.startswith("https://"):
+    if config['tab_indicate_https'] and reuzbl.uri.startswith("https://"):
         if tabindex == currentpage:
             return (config['selected_https'], config['selected_https_text'])
         return (config['https_colours'], config['https_text_colours'])
@@ -323,12 +323,12 @@ def echo(msg):
         sys.stderr.write("%s: %s\n" % (_SCRIPTNAME, msg))
 
 
-def readconfig(uzbl_config, config):
-    '''Loads relevant config from the users uzbl config file into the global
+def readconfig(reuzbl_config, config):
+    '''Loads relevant config from the users reuzbl config file into the global
     config dictionary.'''
 
-    if not os.path.exists(uzbl_config):
-        error("Unable to load config %r" % uzbl_config)
+    if not os.path.exists(reuzbl_config):
+        error("Unable to load config %r" % reuzbl_config)
         return None
 
     # Define parsing regular expressions
@@ -336,7 +336,7 @@ def readconfig(uzbl_config, config):
     findsets = re.compile("^set\s+([^\=]+)\s*\=\s*(.+)$",\
       re.MULTILINE).findall
 
-    h = open(os.path.expandvars(uzbl_config), 'r')
+    h = open(os.path.expandvars(reuzbl_config), 'r')
     rawconfig = h.read()
     h.close()
 
@@ -377,11 +377,11 @@ def gen_endmarker():
     return hashlib.md5(str(random.random()*time.time())).hexdigest()
 
 
-class UzblTabbed:
-    '''A tabbed version of uzbl using gtk.Notebook'''
+class reUzblTabbed:
+    '''A tabbed version of reuzbl using gtk.Notebook'''
 
-    class UzblInstance:
-        '''Uzbl instance meta-data/meta-action object.'''
+    class reUzblInstance:
+        '''reUzbl instance meta-data/meta-action object.'''
 
         def __init__(self, parent, tab, fifo_socket, socket_file, pid,\
           uri, title, switch):
@@ -417,8 +417,8 @@ class UzblTabbed:
               self._marker))
             self._probecmds = '\n'.join(probes)
 
-            # Enqueue keybinding config for child uzbl instance
-            self.parent.config_uzbl(self)
+            # Enqueue keybinding config for child reuzbl instance
+            self.parent.config_reuzbl(self)
 
 
         def flush(self, timer_call=False):
@@ -510,10 +510,10 @@ class UzblTabbed:
         # A list of the recently closed tabs
         self._closed = []
 
-        # Holds metadata on the uzbl childen open.
+        # Holds metadata on the reuzbl childen open.
         self.tabs = {}
 
-        # Generates a unique id for uzbl socket filenames.
+        # Generates a unique id for reuzbl socket filenames.
         self.next_pid = counter().next
 
         # Create main window
@@ -525,7 +525,7 @@ class UzblTabbed:
         except:
             error("Invalid value for default_size in config file.")
 
-        self.window.set_title("Uzbl Browser")
+        self.window.set_title("reUzbl Browser")
         self.window.set_border_width(0)
 
         # Set main window icon
@@ -534,7 +534,7 @@ class UzblTabbed:
             self.window.set_icon(gtk.gdk.pixbuf_new_from_file(icon_path))
 
         else:
-            icon_path = '/usr/share/uzbl/examples/data/uzbl/uzbl.png'
+            icon_path = '/usr/share/reuzbl/examples/data/reuzbl/reuzbl.png'
             if os.path.exists(icon_path):
                 self.window.set_icon(gtk.gdk.pixbuf_new_from_file(icon_path))
 
@@ -598,7 +598,7 @@ class UzblTabbed:
         self.window.show()
         self.wid = self.notebook.window.xid
         # Generate the fifo socket filename.
-        fifo_filename = 'uzbltabbed_%d' % os.getpid()
+        fifo_filename = 'reuzbltabbed_%d' % os.getpid()
         self.fifo_socket = os.path.join(config['fifo_dir'], fifo_filename)
 
         # Now initialise the fifo socket at self.fifo_socket
@@ -610,7 +610,7 @@ class UzblTabbed:
 
 
     def run(self):
-        '''UzblTabbed main function that calls the gtk loop.'''
+        '''reUzblTabbed main function that calls the gtk loop.'''
 
         if not len(self.tabs):
             self.new_tab()
@@ -642,10 +642,10 @@ class UzblTabbed:
             # Unlink fifo socket
             self.unlink_fifo_socket()
 
-            # Attempt to close all uzbl instances nicely.
+            # Attempt to close all reuzbl instances nicely.
             self.quitrequest()
 
-            # Allow time for all the uzbl instances to quit.
+            # Allow time for all the reuzbl instances to quit.
             time.sleep(1)
 
             raise
@@ -667,7 +667,7 @@ class UzblTabbed:
 
         error("commencing infanticide!")
 
-        # Sends the exit signal to all uzbl instances.
+        # Sends the exit signal to all reuzbl instances.
         self.quitrequest()
 
 
@@ -770,7 +770,7 @@ class UzblTabbed:
 
 
     def probe_clients(self):
-        '''Probe all uzbl clients for up-to-date window titles and uri's.'''
+        '''Probe all reuzbl clients for up-to-date window titles and uri's.'''
 
         save_session = config['save_session']
 
@@ -780,18 +780,18 @@ class UzblTabbed:
 
         for tab in notebooklist:
             if tab not in tabskeys: continue
-            uzbl = self.tabs[tab]
-            uzbl.probe()
-            if uzbl._socket:
-                sockd[uzbl._socket] = uzbl
+            reuzbl = self.tabs[tab]
+            reuzbl.probe()
+            if reuzbl._socket:
+                sockd[reuzbl._socket] = reuzbl
 
         sockets = sockd.keys()
         (reading, _, errors) = select.select(sockets, [], sockets, 0)
 
         for sock in reading:
-            uzbl = sockd[sock]
-            uzbl._buffer = sock.recv(1024).replace('\n',' ')
-            temp = uzbl._buffer.split(uzbl._marker)
+            reuzbl = sockd[sock]
+            reuzbl._buffer = sock.recv(1024).replace('\n',' ')
+            temp = reuzbl._buffer.split(reuzbl._marker)
             self._buffer = temp.pop()
             cmds = [s.strip().split() for s in temp if len(s.strip())]
             for cmd in cmds:
@@ -807,7 +807,7 @@ class UzblTabbed:
 
 
     def parse_command(self, cmd):
-        '''Parse instructions from uzbl child processes.'''
+        '''Parse instructions from reuzbl child processes.'''
 
         # Commands ( [] = optional, {} = required )
         # new [uri]
@@ -831,7 +831,7 @@ class UzblTabbed:
         # bring_to_front
         #   brings the gtk window to focus.
         # exit
-        #   exits uzbl_tabbed.py
+        #   exits reuzbl_tabbed.py
 
         if cmd[0] == "new":
             if len(cmd) == 2:
@@ -878,16 +878,16 @@ class UzblTabbed:
 
         elif cmd[0] in ["title", "uri"]:
             if len(cmd) > 2:
-                uzbl = self.get_tab_by_pid(int(cmd[1]))
-                if uzbl:
-                    old = getattr(uzbl, cmd[0])
+                reuzbl = self.get_tab_by_pid(int(cmd[1]))
+                if reuzbl:
+                    old = getattr(reuzbl, cmd[0])
                     new = ' '.join(cmd[2:])
-                    setattr(uzbl, cmd[0], new)
+                    setattr(reuzbl, cmd[0], new)
                     if old != new:
                         self.update_tablist()
 
                 else:
-                    error("parse_command: no uzbl with pid %r" % int(cmd[1]))
+                    error("parse_command: no reuzbl with pid %r" % int(cmd[1]))
 
         elif cmd[0] == "preset":
             if len(cmd) < 3:
@@ -910,17 +910,17 @@ class UzblTabbed:
                     error("parse_command: preset %r does not exist." % path)
 
             elif cmd[1] == "list":
-                uzbl = self.get_tab_by_pid(int(cmd[2]))
-                if uzbl:
+                reuzbl = self.get_tab_by_pid(int(cmd[2]))
+                if reuzbl:
                     if not os.path.isdir(config['saved_sessions_dir']):
                         js = "js alert('No saved presets.');"
-                        uzbl.send(js)
+                        reuzbl.send(js)
 
                     else:
                         listdir = os.listdir(config['saved_sessions_dir'])
                         listdir = "\\n".join(listdir)
                         js = "js alert('Session presets:\\n\\n%s');" % listdir
-                        uzbl.send(js)
+                        reuzbl.send(js)
 
                 else:
                     error("parse_command: unknown tab pid.")
@@ -943,17 +943,17 @@ class UzblTabbed:
 
 
     def get_tab_by_pid(self, pid):
-        '''Return uzbl instance by pid.'''
+        '''Return reuzbl instance by pid.'''
 
-        for (tab, uzbl) in self.tabs.items():
-            if uzbl.pid == pid:
-                return uzbl
+        for (tab, reuzbl) in self.tabs.items():
+            if reuzbl.pid == pid:
+                return reuzbl
 
         return False
 
 
     def new_tab(self, uri='', title='', switch=None):
-        '''Add a new tab to the notebook and start a new instance of uzbl.
+        '''Add a new tab to the notebook and start a new instance of reuzbl.
         Use the switch option to negate config['switch_to_new_tabs'] option
         when you need to load multiple tabs at a time (I.e. like when
         restoring a session from a file).'''
@@ -965,9 +965,9 @@ class UzblTabbed:
         sid = tab.get_id()
         uri = uri.strip()
 
-        fifo_filename = 'uzbl_fifo_%s_%0.2d' % (self.wid, pid)
+        fifo_filename = 'reuzbl_fifo_%s_%0.2d' % (self.wid, pid)
         fifo_socket = os.path.join(config['fifo_dir'], fifo_filename)
-        socket_filename = 'uzbl_socket_%s_%0.2d' % (self.wid, pid)
+        socket_filename = 'reuzbl_socket_%s_%0.2d' % (self.wid, pid)
         socket_file = os.path.join(config['socket_dir'], socket_filename)
 
         if switch is None:
@@ -976,20 +976,20 @@ class UzblTabbed:
         if not title:
             title = config['new_tab_title']
 
-        uzbl = self.UzblInstance(self, tab, fifo_socket, socket_file, pid,\
+        reuzbl = self.reUzblInstance(self, tab, fifo_socket, socket_file, pid,\
           uri, title, switch)
 
         if len(uri):
             uri = "--uri %r" % uri
 
-        self.tabs[tab] = uzbl
-        cmd = 'uzbl -s %s -n %s_%0.2d %s &' % (sid, self.wid, pid, uri)
+        self.tabs[tab] = reuzbl
+        cmd = 'reuzbl -s %s -n %s_%0.2d %s &' % (sid, self.wid, pid, uri)
         subprocess.Popen([cmd], shell=True) # TODO: do i need close_fds=True ?
 
         # Add gobject timer to make sure the config is pushed when fifo socket
         # has been created.
-        timerid = timeout_add(100, uzbl.flush, "flush-initial-config")
-        uzbl.timers['flush-initial-config'] = timerid
+        timerid = timeout_add(100, reuzbl.flush, "flush-initial-config")
+        reuzbl.timers['flush-initial-config'] = timerid
 
         self.update_tablist()
 
@@ -1001,12 +1001,12 @@ class UzblTabbed:
         tabs = self.tabs.keys()
         for tab in list(self.notebook)[:-1]:
             if tab not in tabs: continue
-            uzbl = self.tabs[tab]
-            uzbl.send("exit")
+            reuzbl = self.tabs[tab]
+            reuzbl.send("exit")
 
 
-    def config_uzbl(self, uzbl):
-        '''Send bind commands for tab new/close/next/prev to a uzbl
+    def config_reuzbl(self, reuzbl):
+        '''Send bind commands for tab new/close/next/prev to a reuzbl
         instance.'''
 
         binds = []
@@ -1034,7 +1034,7 @@ class UzblTabbed:
         bind(config['bind_save_preset'], 'preset save %s')
         bind(config['bind_load_preset'], 'preset load %s')
         bind(config['bind_del_preset'], 'preset del %s')
-        bind(config['bind_list_presets'], 'preset list %d' % uzbl.pid)
+        bind(config['bind_list_presets'], 'preset list %d' % reuzbl.pid)
         bind(config['bind_exit'], 'exit')
 
         # Set definitions here
@@ -1042,8 +1042,8 @@ class UzblTabbed:
         if config['capture_new_windows']:
             set("new_window", r'new $8')
 
-        # Send config to uzbl instance via its socket file.
-        uzbl.send("\n".join(binds+sets))
+        # Send config to reuzbl instance via its socket file.
+        reuzbl.send("\n".join(binds+sets))
 
 
     def goto_tab(self, index):
@@ -1128,20 +1128,20 @@ class UzblTabbed:
         signal.'''
 
         if tab in self.tabs.keys():
-            uzbl = self.tabs[tab]
-            for (timer, gid) in uzbl.timers.items():
+            reuzbl = self.tabs[tab]
+            for (timer, gid) in reuzbl.timers.items():
                 error("tab_closed: removing timer %r" % timer)
                 source_remove(gid)
-                del uzbl.timers[timer]
+                del reuzbl.timers[timer]
 
-            if uzbl._socket:
-                uzbl._socket.close()
-                uzbl._socket = None
+            if reuzbl._socket:
+                reuzbl._socket.close()
+                reuzbl._socket = None
 
-            uzbl._fifoout = []
-            uzbl._socketout = []
-            uzbl._kill = True
-            self._closed.append((uzbl.uri, uzbl.title))
+            reuzbl._fifoout = []
+            reuzbl._socketout = []
+            reuzbl._kill = True
+            self._closed.append((reuzbl.uri, reuzbl.title))
             self._closed = self._closed[-10:]
             del self.tabs[tab]
 
@@ -1185,7 +1185,7 @@ class UzblTabbed:
         if curpage is None:
             curpage = self.notebook.get_current_page()
 
-        title_format = "%s - Uzbl Browser"
+        title_format = "%s - reUzbl Browser"
         max_title_len = config['max_title_len']
 
         if show_tablist:
@@ -1204,20 +1204,20 @@ class UzblTabbed:
 
         for index, tab in enumerate(self.notebook):
             if tab not in tabs: continue
-            uzbl = self.tabs[tab]
+            reuzbl = self.tabs[tab]
 
             if index == curpage:
-                self.window.set_title(title_format % uzbl.title)
+                self.window.set_title(title_format % reuzbl.title)
 
             # Unicode heavy strings do not like being truncated/sliced so by
             # re-encoding the string sliced of limbs are removed.
-            tabtitle = uzbl.title[:max_title_len + int(show_ellipsis)]
+            tabtitle = reuzbl.title[:max_title_len + int(show_ellipsis)]
             if type(tabtitle) != types.UnicodeType:
                 tabtitle = unicode(tabtitle, 'utf-8', 'ignore')
 
             tabtitle = tabtitle.encode('utf-8', 'ignore').strip()
 
-            if show_ellipsis and len(tabtitle) != len(uzbl.title):
+            if show_ellipsis and len(tabtitle) != len(reuzbl.title):
                 tabtitle += "\xe2\x80\xa6"
 
             if show_gtk_tabs:
@@ -1229,7 +1229,7 @@ class UzblTabbed:
                     self.notebook.set_tab_label_text(tab, str(index))
 
             if show_tablist:
-                style = colour_selector(index, curpage, uzbl)
+                style = colour_selector(index, curpage, reuzbl)
                 (tabc, textc) = style
 
                 if multiline_tabs:
@@ -1281,9 +1281,9 @@ class UzblTabbed:
         state = []
         for tab in list(self.notebook):
             if tab not in tabs: continue
-            uzbl = self.tabs[tab]
-            if not uzbl.uri: continue
-            state += [(uzbl.uri, uzbl.title),]
+            reuzbl = self.tabs[tab]
+            if not reuzbl.uri: continue
+            state += [(reuzbl.uri, reuzbl.title),]
 
         session = {'curtab': self.notebook.get_current_page(),
           'tabs': state}
@@ -1384,7 +1384,7 @@ class UzblTabbed:
 
 
     def quitrequest(self, *args):
-        '''Attempt to close all uzbl instances nicely and exit.'''
+        '''Attempt to close all reuzbl instances nicely and exit.'''
 
         self._killed = True
 
@@ -1397,8 +1397,8 @@ class UzblTabbed:
                 if os.path.isfile(config['session_file']):
                     os.remove(config['session_file'])
 
-        for (tab, uzbl) in self.tabs.items():
-            uzbl.send("exit")
+        for (tab, reuzbl) in self.tabs.items():
+            reuzbl.send("exit")
 
         # Add a gobject timer to make sure the application force-quits after a
         # reasonable period. Calling quit when all the tabs haven't had time to
@@ -1429,8 +1429,8 @@ class UzblTabbed:
 
 if __name__ == "__main__":
 
-    # Read from the uzbl config into the global config dictionary.
-    readconfig(UZBL_CONFIG, config)
+    # Read from the reuzbl config into the global config dictionary.
+    readconfig(REUZBL_CONFIG, config)
 
     # Build command line parser
     usage = "usage: %prog [OPTIONS] {URIS}..."
@@ -1463,12 +1463,12 @@ if __name__ == "__main__":
         import pprint
         sys.stderr.write("%s\n" % pprint.pformat(config))
 
-    uzbl = UzblTabbed()
+    reuzbl = reUzblTabbed()
 
-    # All extra arguments given to uzbl_tabbed.py are interpreted as
+    # All extra arguments given to reuzbl_tabbed.py are interpreted as
     # web-locations to opened in new tabs.
     lasturi = len(uris)-1
     for (index,uri) in enumerate(uris):
-        uzbl.new_tab(uri, switch=(index==lasturi))
+        reuzbl.new_tab(uri, switch=(index==lasturi))
 
-    uzbl.run()
+    reuzbl.run()

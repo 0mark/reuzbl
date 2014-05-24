@@ -6,8 +6,8 @@
  *
  *
  * Installation:
- *      - Copy this script to $HOME/.local/share/uzbl/scripts
- *      - Add the following to $HOME/.config/uzbl/config:
+ *      - Copy this script to $HOME/.local/share/reuzbl/scripts
+ *      - Add the following to $HOME/.config/reuzbl/config:
  *          @bind E = script @scripts_dir/extedit.js
  *      - Set your preferred editor
  *          set editor = gvim
@@ -87,16 +87,16 @@ function utf8_encode ( argString ) {
  var actelem  = document.activeElement;
 
  if(actelem.type == 'text' || actelem.type == 'textarea') {
-    var editor   = Uzbl.run("print @external_editor") || "gvim";
-    var filename = Uzbl.run("print @(mktemp /tmp/uzbl_edit.XXXXXX)@");
+    var editor   = reUzbl.run("print @external_editor") || "gvim";
+    var filename = reUzbl.run("print @(mktemp /tmp/reuzbl_edit.XXXXXX)@");
 
     if(actelem.value)
-        Uzbl.run("sh 'echo " + window.btoa(utf8_encode(actelem.value)) + " | base64 -d > " + filename + "'");
+        reUzbl.run("sh 'echo " + window.btoa(utf8_encode(actelem.value)) + " | base64 -d > " + filename + "'");
 
-    Uzbl.run("sync_sh '" + editor + " " + filename + "'");
-    actelem.value = utf8_decode(window.atob(Uzbl.run("print @(base64 -w 0 " + filename + ")@")));
+    reUzbl.run("sync_sh '" + editor + " " + filename + "'");
+    actelem.value = utf8_decode(window.atob(reUzbl.run("print @(base64 -w 0 " + filename + ")@")));
 
-    Uzbl.run("sh 'rm -f " + filename + "'");
+    reUzbl.run("sh 'rm -f " + filename + "'");
  }
 
  })();

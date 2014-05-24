@@ -1,7 +1,7 @@
 #!/bin/sh
 
-[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/uzbl" ] || exit 1
-file=${XDG_DATA_HOME:-$HOME/.local/share}/uzbl/bookmarks
+[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/reuzbl" ] || exit 1
+file=${XDG_DATA_HOME:-$HOME/.local/share}/reuzbl/bookmarks
 
 which zenity &>/dev/null || exit 2
 url=$6

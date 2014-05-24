@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# uzblcat - safely push html to uzbl
-# See http://www.uzbl.org/wiki/html-mode
+# reuzblcat - safely push html to reuzbl
+# See http://www.reuzbl.org/wiki/html-mode
 
 from sys import stdin, stdout
 

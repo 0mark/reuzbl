@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# The Python Cookie Daemon for Uzbl.
+# The Python Cookie Daemon for reUzbl.
 # Copyright (c) 2009, Tom Adams <tom@holizz.com>
 # Copyright (c) 2009, Dieter Plaetinck <dieter@plaetinck.be>
 # Copyright (c) 2009, Mason Larobina <mason.larobina@gmail.com>
@@ -23,20 +23,20 @@
 The Python Cookie Daemon
 ========================
 
-This daemon is a re-write of the original cookies.py script found in uzbl's
+This daemon is a re-write of the original cookies.py script found in reuzbl's
 master branch. This script provides more functionality than the original
 cookies.py by adding numerous command line options to specify different cookie
 jar locations, socket locations, verbose output, etc. This functionality is
 very useful as it allows you to run multiple daemons at once serving cookies
-to different groups of uzbl instances as required.
+to different groups of reuzbl instances as required.
 
 Keeping up to date
 ==================
 
-Check the cookie daemon uzbl-wiki page for more information on where to
+Check the cookie daemon reuzbl-wiki page for more information on where to
 find the latest version of the cookie_daemon.py
 
-    http://www.uzbl.org/wiki/cookie_daemon.py
+    http://www.reuzbl.org/wiki/cookie_daemon.py
 
 Command line options
 ====================
@@ -46,17 +46,17 @@ line options:
 
   ./cookie_daemon.py --help
 
-Talking with uzbl
+Talking with reuzbl
 =================
 
-In order to get uzbl to talk to a running cookie daemon you add the following
-to your uzbl config:
+In order to get reuzbl to talk to a running cookie daemon you add the following
+to your reuzbl config:
 
-  set cookie_handler = talk_to_socket $XDG_CACHE_HOME/uzbl/cookie_daemon_socket
+  set cookie_handler = talk_to_socket $XDG_CACHE_HOME/reuzbl/cookie_daemon_socket
 
 Or if you prefer using the $HOME variable:
 
-  set cookie_handler = talk_to_socket $HOME/.cache/uzbl/cookie_daemon_socket
+  set cookie_handler = talk_to_socket $HOME/.cache/reuzbl/cookie_daemon_socket
 
 Todo list
 =========
@@ -67,7 +67,7 @@ Reporting bugs / getting help
 =============================
 
 The best way to report bugs and or get help with the cookie daemon is to
-contact the maintainers it the #uzbl irc channel found on the Freenode IRC
+contact the maintainers it the #reuzbl irc channel found on the Freenode IRC
 network (irc.freenode.org).
 '''
 
@@ -106,9 +106,9 @@ def xdghome(key, default):
     return join(os.environ['HOME'], default)
 
 # Setup xdg paths.
-CACHE_DIR = join(xdghome('CACHE', '.cache/'), 'uzbl/')
-DATA_DIR = join(xdghome('DATA', '.local/share/'), 'uzbl/')
-CONFIG_DIR = join(xdghome('CONFIG', '.config/'), 'uzbl/')
+CACHE_DIR = join(xdghome('CACHE', '.cache/'), 'reuzbl/')
+DATA_DIR = join(xdghome('DATA', '.local/share/'), 'reuzbl/')
+CONFIG_DIR = join(xdghome('CONFIG', '.config/'), 'reuzbl/')
 
 # Ensure data paths exist.
 for path in [CACHE_DIR, DATA_DIR, CONFIG_DIR]:
@@ -283,7 +283,7 @@ def daemonize():
 
 
 class CookieMonster:
-    '''The uzbl cookie daemon class.'''
+    '''The reuzbl cookie daemon class.'''
 
     def __init__(self):
         '''Initialise class variables.'''
@@ -412,7 +412,7 @@ class CookieMonster:
 
 
     def create_socket(self):
-        '''Create AF_UNIX socket for communication with uzbl instances.'''
+        '''Create AF_UNIX socket for communication with reuzbl instances.'''
 
         cookie_socket = config['cookie_socket']
         mkbasedir(cookie_socket)

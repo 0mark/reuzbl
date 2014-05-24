@@ -1,6 +1,6 @@
 #!/bin/sh
 
-history_file=${XDG_DATA_HOME:-$HOME/.local/share}/uzbl/history
+history_file=${XDG_DATA_HOME:-$HOME/.local/share}/reuzbl/history
 [ -r "$history_file" ] || exit 1
 
 # choose from all entries, sorted and uniqued

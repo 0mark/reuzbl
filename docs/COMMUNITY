@@ -3,32 +3,32 @@ COMMUNITY
 
 ### Mailing list
 
-* Address: [uzbl-dev@lists.uzbl.org](mailto:uzbl-dev@lists.uzbl.org)
-* [Page](http://lists.uzbl.org/listinfo.cgi/uzbl-dev-uzbl.org)
-* [Archives](http://lists.uzbl.org/pipermail/uzbl-dev-uzbl.org/)
+* Address: [reuzbl-dev@lists.reuzbl.org](mailto:reuzbl-dev@lists.reuzbl.org)
+* [Page](http://lists.reuzbl.org/listinfo.cgi/reuzbl-dev-reuzbl.org)
+* [Archives](http://lists.reuzbl.org/pipermail/reuzbl-dev-reuzbl.org/)
 
 ### IRC
 
-* `#uzbl` on irc.freenode.net
+* `#reuzbl` on irc.freenode.net
 
 ### Website
 
-* [www.uzbl.org](http://www.uzbl.org/)
+* [www.reuzbl.org](http://www.reuzbl.org/)
 
 ### Bugtracker
 
-* [www.uzbl.org/bugs/](http://www.uzbl.org/bugs/)
+* [www.reuzbl.org/bugs/](http://www.reuzbl.org/bugs/)
 
 ### Code repositories
 Remember: dieter/master = official stable branch.
 If you want to develop, develop against dieter/experimental
 
-* [github.com/Dieterbe/uzbl](http://github.com/Dieterbe/uzbl/)
-* [github.com/anydot/uzbl](http://github.com/anydot/uzbl/)
-* [github.com/Barrucadu/uzbl](http://github.com/Barrucadu/uzbl/)
-* [github.com/dusanx/uzbl](http://github.com/dusanx/uzbl/)
-* [github.com/robm/uzbl](http://github.com/robm/uzbl/)
+* [github.com/Dieterbe/reuzbl](http://github.com/Dieterbe/reuzbl/)
+* [github.com/anydot/reuzbl](http://github.com/anydot/reuzbl/)
+* [github.com/Barrucadu/reuzbl](http://github.com/Barrucadu/reuzbl/)
+* [github.com/dusanx/reuzbl](http://github.com/dusanx/reuzbl/)
+* [github.com/robm/reuzbl](http://github.com/robm/reuzbl/)
 
 There are more contributors who have forks.  See:
 
-[Uzbl Network graph](http://github.com/Dieterbe/uzbl/network)
+[reUzbl Network graph](http://github.com/Dieterbe/reuzbl/network)

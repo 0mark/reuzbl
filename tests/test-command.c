@@ -22,10 +22,10 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include <uzbl.h>
+#include <reuzbl.h>
 #include <config.h>
 
-extern Uzbl uzbl;
+extern reUzbl reuzbl;
 
 void
 test_keycmd (void) {
@@ -35,14 +35,14 @@ test_keycmd (void) {
   /* the 'keycmd' command */
   parse_command("keycmd", "insert", NULL);
 
-  g_assert_cmpint(1, ==, uzbl.behave.insert_mode);
-  g_assert_cmpstr("", ==, uzbl.state.keycmd);
+  g_assert_cmpint(1, ==, reuzbl.behave.insert_mode);
+  g_assert_cmpstr("", ==, reuzbl.state.keycmd);
 
   /* setting the keycmd variable directly, equivalent to the 'keycmd' comand */
   set_var_value("keycmd", "command");
 
-  g_assert_cmpint(0, ==, uzbl.behave.insert_mode);
-  g_assert_cmpstr("", ==, uzbl.state.keycmd);
+  g_assert_cmpint(0, ==, reuzbl.behave.insert_mode);
+  g_assert_cmpstr("", ==, reuzbl.state.keycmd);
 }
 
 int

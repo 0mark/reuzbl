@@ -3,7 +3,7 @@
 use strict;
 use File::Spec;
 
-my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/uzbl/per-site';
+my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/reuzbl/per-site';
 my $mode = $ARGV[7];
 
 my @setargs = splice(@ARGV, 8);

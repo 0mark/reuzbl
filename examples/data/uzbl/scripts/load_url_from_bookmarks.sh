@@ -2,7 +2,7 @@
 
 #NOTE: it's the job of the script that inserts bookmarks to make sure there are no dupes.
 
-file=${XDG_DATA_HOME:-$HOME/.local/share}/uzbl/bookmarks
+file=${XDG_DATA_HOME:-$HOME/.local/share}/reuzbl/bookmarks
 [ -r "$file" ] || exit
 
 if [ -z "$DMENUSETTINGS" ]; then

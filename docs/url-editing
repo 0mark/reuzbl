@@ -1,4 +1,4 @@
-* All url changing/editing happens outside of uzbl
+* All url changing/editing happens outside of reuzbl
 
 Use cases:
 * load url from history/bookmarks (dmenu-vertical is great for this)

@@ -10,9 +10,9 @@
 # new:  fetch new file
 
 # usage example:
-# bind LL = spawn /usr/share/uzbl/examples/data/scripts/formfiller.pl load mode
-# bind LN = spawn /usr/share/uzbl/examples/data/scripts/formfiller.pl new mode
-# bind LE = spawn /usr/share/uzbl/examples/data/scripts/formfiller.pl edit mode
+# bind LL = spawn /usr/share/reuzbl/examples/data/scripts/formfiller.pl load mode
+# bind LN = spawn /usr/share/reuzbl/examples/data/scripts/formfiller.pl new mode
+# bind LE = spawn /usr/share/reuzbl/examples/data/scripts/formfiller.pl edit mode
 # mode is one of d (Domain), p (Path), g (Get), a (all), and defines the part of
 # the url which is used to identify the form
 
@@ -45,7 +45,7 @@ sub Socket {
   }
 }
 my $query = Socket($ARGV[4]);
-my $keydir = $ENV{XDG_DATA_HOME} . "/uzbl/forms";
+my $keydir = $ENV{XDG_DATA_HOME} . "/reuzbl/forms";
 my ($config,$pid,$xid,$fifoname,$socket,$url,$title,$cmd,$mode) = @ARGV;
 if (!defined $fifoname || $fifoname eq "") { die "No fifo"; }
 

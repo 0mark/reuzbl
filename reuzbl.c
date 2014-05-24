@@ -58,28 +58,28 @@
 #include <sys/uio.h>
 #include <sys/ioctl.h>
 #include <assert.h>
-#include "uzbl.h"
+#include "reuzbl.h"
 #include "config.h"
 
-Uzbl uzbl;
+reUzbl reuzbl;
 
 /* commandline arguments (set initial values for the state variables) */
 const
 GOptionEntry entries[] =
 {
-    { "uri",      'u', 0, G_OPTION_ARG_STRING, &uzbl.state.uri,
-        "Uri to load at startup (equivalent to 'uzbl <uri>' or 'set uri = URI' after uzbl has launched)", "URI" },
-    { "verbose",  'v', 0, G_OPTION_ARG_NONE,   &uzbl.state.verbose,
+    { "uri",      'u', 0, G_OPTION_ARG_STRING, &reuzbl.state.uri,
+        "Uri to load at startup (equivalent to 'reuzbl <uri>' or 'set uri = URI' after reuzbl has launched)", "URI" },
+    { "verbose",  'v', 0, G_OPTION_ARG_NONE,   &reuzbl.state.verbose,
         "Whether to print all messages or just errors.", NULL },
-    { "name",     'n', 0, G_OPTION_ARG_STRING, &uzbl.state.instance_name,
+    { "name",     'n', 0, G_OPTION_ARG_STRING, &reuzbl.state.instance_name,
         "Name of the current instance (defaults to Xorg window id or pid when embed)", "NAME" },
-    { "config",   'c', 0, G_OPTION_ARG_STRING, &uzbl.state.config_file,
+    { "config",   'c', 0, G_OPTION_ARG_STRING, &reuzbl.state.config_file,
         "Path to config file or '-' for stdin", "FILE" },
-    { "socket",   's', 0, G_OPTION_ARG_INT, &uzbl.state.socket_id,
+    { "socket",   's', 0, G_OPTION_ARG_INT, &reuzbl.state.socket_id,
         "Socket ID", "SOCKET" },
-    { "geometry", 'g', 0, G_OPTION_ARG_STRING, &uzbl.gui.geometry,
+    { "geometry", 'g', 0, G_OPTION_ARG_STRING, &reuzbl.gui.geometry,
         "Set window geometry (format: WIDTHxHEIGHT+-X+-Y)", "GEOMETRY" },
-    { "version",  'V', 0, G_OPTION_ARG_NONE, &uzbl.behave.print_version,
+    { "version",  'V', 0, G_OPTION_ARG_NONE, &reuzbl.behave.print_version,
         "Print the version and exit", NULL },
     { NULL,      0, 0, 0, NULL, NULL, NULL }
 };
@@ -97,7 +97,7 @@ typedef struct {
     int dump;
     int writeable;
     /*@null@*/ void (*func)(void);
-} uzbl_cmdprop;
+} reuzbl_cmdprop;
 
 /* abbreviations to help keep the table's width humane */
 #define PTR_V_STR(var, d, fun) { .ptr.s = &(var), .type = TYPE_STR, .dump = d, .writeable = 1, .func = fun }
@@ -109,88 +109,88 @@ typedef struct {
 
 const struct var_name_to_ptr_t {
     const char *name;
-    uzbl_cmdprop cp;
+    reuzbl_cmdprop cp;
 } var_name_to_ptr[] = {
 /*    variable name            pointer to variable in code                     dump callback function    */
 /*  ---------------------------------------------------------------------------------------------- */
-    { "uri",                    PTR_V_STR(uzbl.state.uri,                       1,   cmd_load_uri)},
-    { "verbose",                PTR_V_INT(uzbl.state.verbose,                   1,   NULL)},
-    { "inject_html",            PTR_V_STR(uzbl.behave.inject_html,              0,   cmd_inject_html)},
-    { "keycmd",                 PTR_V_STR(uzbl.state.keycmd,                    1,   set_keycmd)},
-    { "keycmd_pos",             PTR_V_INT(uzbl.state.keycmd_pos,                1,   NULL)},
-    { "keycmd_marked",          PTR_V_STR(uzbl.state.keycmd_marked,             1,   NULL)},
-    { "keycmd_screen_name",     PTR_V_STR(uzbl.state.keycmd_screen_name,        1,   NULL)},
-    { "last_event_name",        PTR_V_STR(uzbl.behave.last_event_name,          1,   NULL)},
-    { "last_event_details",     PTR_V_STR(uzbl.behave.last_event_details,       1,   NULL)},
-    { "status_message",         PTR_V_STR(uzbl.gui.sbar.msg,                    1,   update_title)},
-    { "show_status",            PTR_V_INT(uzbl.behave.show_status,              1,   cmd_set_status)},
-    { "status_top",             PTR_V_INT(uzbl.behave.status_top,               1,   move_statusbar)},
-    { "status_format",          PTR_V_STR(uzbl.behave.status_format,            1,   update_title)},
-    { "status_pbar_done",       PTR_V_STR(uzbl.gui.sbar.progress_s,             1,   update_title)},
-    { "status_pbar_pending",    PTR_V_STR(uzbl.gui.sbar.progress_u,             1,   update_title)},
-    { "status_pbar_width",      PTR_V_INT(uzbl.gui.sbar.progress_w,             1,   update_title)},
-    { "status_background",      PTR_V_STR(uzbl.behave.status_background,        1,   update_title)},
-    { "insert_indicator",       PTR_V_STR(uzbl.behave.insert_indicator,         1,   update_indicator)},
-    { "command_indicator",      PTR_V_STR(uzbl.behave.cmd_indicator,            1,   update_indicator)},
-    { "title_format_long",      PTR_V_STR(uzbl.behave.title_format_long,        1,   update_title)},
-    { "title_format_short",     PTR_V_STR(uzbl.behave.title_format_short,       1,   update_title)},
-    { "icon",                   PTR_V_STR(uzbl.gui.icon,                        1,   set_icon)},
-    { "insert_mode",            PTR_V_INT(uzbl.behave.insert_mode,              1,   set_mode_indicator)},
-    { "always_insert_mode",     PTR_V_INT(uzbl.behave.always_insert_mode,       1,   cmd_always_insert_mode)},
-    { "reset_command_mode",     PTR_V_INT(uzbl.behave.reset_command_mode,       1,   NULL)},
-    { "modkey",                 PTR_V_STR(uzbl.behave.modkey,                   1,   cmd_modkey)},
-    // { "load_finish_handler",    PTR_V_STR(uzbl.behave.load_finish_handler,      1,   NULL)},
-    // { "load_start_handler",     PTR_V_STR(uzbl.behave.load_start_handler,       1,   NULL)},
-    // { "load_commit_handler",    PTR_V_STR(uzbl.behave.load_commit_handler,      1,   NULL)},
-    // { "download_handler",       PTR_V_STR(uzbl.behave.download_handler,         1,   NULL)},
-    // { "cookie_handler",         PTR_V_STR(uzbl.behave.cookie_handler,           1,   cmd_cookie_handler)},
-    // { "new_window",             PTR_V_STR(uzbl.behave.new_window,               1,   NULL)},
-    // { "scheme_handler",         PTR_V_STR(uzbl.behave.scheme_handler,           1,   cmd_scheme_handler)},
-    { "fifo_dir",               PTR_V_STR(uzbl.behave.fifo_dir,                 1,   cmd_fifo_dir)},
-    { "socket_dir",             PTR_V_STR(uzbl.behave.socket_dir,               1,   cmd_socket_dir)},
-    { "http_debug",             PTR_V_INT(uzbl.behave.http_debug,               1,   cmd_http_debug)},
-    { "shell_cmd",              PTR_V_STR(uzbl.behave.shell_cmd,                1,   NULL)},
-    { "proxy_url",              PTR_V_STR(uzbl.net.proxy_url,                   1,   set_proxy_url)},
-    { "max_conns",              PTR_V_INT(uzbl.net.max_conns,                   1,   cmd_max_conns)},
-    { "max_conns_host",         PTR_V_INT(uzbl.net.max_conns_host,              1,   cmd_max_conns_host)},
-    { "useragent",              PTR_V_STR(uzbl.net.useragent,                   1,   cmd_useragent)},
+    { "uri",                    PTR_V_STR(reuzbl.state.uri,                       1,   cmd_load_uri)},
+    { "verbose",                PTR_V_INT(reuzbl.state.verbose,                   1,   NULL)},
+    { "inject_html",            PTR_V_STR(reuzbl.behave.inject_html,              0,   cmd_inject_html)},
+    { "keycmd",                 PTR_V_STR(reuzbl.state.keycmd,                    1,   set_keycmd)},
+    { "keycmd_pos",             PTR_V_INT(reuzbl.state.keycmd_pos,                1,   NULL)},
+    { "keycmd_marked",          PTR_V_STR(reuzbl.state.keycmd_marked,             1,   NULL)},
+    { "keycmd_screen_name",     PTR_V_STR(reuzbl.state.keycmd_screen_name,        1,   NULL)},
+    { "last_event_name",        PTR_V_STR(reuzbl.behave.last_event_name,          1,   NULL)},
+    { "last_event_details",     PTR_V_STR(reuzbl.behave.last_event_details,       1,   NULL)},
+    { "status_message",         PTR_V_STR(reuzbl.gui.sbar.msg,                    1,   update_title)},
+    { "show_status",            PTR_V_INT(reuzbl.behave.show_status,              1,   cmd_set_status)},
+    { "status_top",             PTR_V_INT(reuzbl.behave.status_top,               1,   move_statusbar)},
+    { "status_format",          PTR_V_STR(reuzbl.behave.status_format,            1,   update_title)},
+    { "status_pbar_done",       PTR_V_STR(reuzbl.gui.sbar.progress_s,             1,   update_title)},
+    { "status_pbar_pending",    PTR_V_STR(reuzbl.gui.sbar.progress_u,             1,   update_title)},
+    { "status_pbar_width",      PTR_V_INT(reuzbl.gui.sbar.progress_w,             1,   update_title)},
+    { "status_background",      PTR_V_STR(reuzbl.behave.status_background,        1,   update_title)},
+    { "insert_indicator",       PTR_V_STR(reuzbl.behave.insert_indicator,         1,   update_indicator)},
+    { "command_indicator",      PTR_V_STR(reuzbl.behave.cmd_indicator,            1,   update_indicator)},
+    { "title_format_long",      PTR_V_STR(reuzbl.behave.title_format_long,        1,   update_title)},
+    { "title_format_short",     PTR_V_STR(reuzbl.behave.title_format_short,       1,   update_title)},
+    { "icon",                   PTR_V_STR(reuzbl.gui.icon,                        1,   set_icon)},
+    { "insert_mode",            PTR_V_INT(reuzbl.behave.insert_mode,              1,   set_mode_indicator)},
+    { "always_insert_mode",     PTR_V_INT(reuzbl.behave.always_insert_mode,       1,   cmd_always_insert_mode)},
+    { "reset_command_mode",     PTR_V_INT(reuzbl.behave.reset_command_mode,       1,   NULL)},
+    { "modkey",                 PTR_V_STR(reuzbl.behave.modkey,                   1,   cmd_modkey)},
+    // { "load_finish_handler",    PTR_V_STR(reuzbl.behave.load_finish_handler,      1,   NULL)},
+    // { "load_start_handler",     PTR_V_STR(reuzbl.behave.load_start_handler,       1,   NULL)},
+    // { "load_commit_handler",    PTR_V_STR(reuzbl.behave.load_commit_handler,      1,   NULL)},
+    // { "download_handler",       PTR_V_STR(reuzbl.behave.download_handler,         1,   NULL)},
+    // { "cookie_handler",         PTR_V_STR(reuzbl.behave.cookie_handler,           1,   cmd_cookie_handler)},
+    // { "new_window",             PTR_V_STR(reuzbl.behave.new_window,               1,   NULL)},
+    // { "scheme_handler",         PTR_V_STR(reuzbl.behave.scheme_handler,           1,   cmd_scheme_handler)},
+    { "fifo_dir",               PTR_V_STR(reuzbl.behave.fifo_dir,                 1,   cmd_fifo_dir)},
+    { "socket_dir",             PTR_V_STR(reuzbl.behave.socket_dir,               1,   cmd_socket_dir)},
+    { "http_debug",             PTR_V_INT(reuzbl.behave.http_debug,               1,   cmd_http_debug)},
+    { "shell_cmd",              PTR_V_STR(reuzbl.behave.shell_cmd,                1,   NULL)},
+    { "proxy_url",              PTR_V_STR(reuzbl.net.proxy_url,                   1,   set_proxy_url)},
+    { "max_conns",              PTR_V_INT(reuzbl.net.max_conns,                   1,   cmd_max_conns)},
+    { "max_conns_host",         PTR_V_INT(reuzbl.net.max_conns_host,              1,   cmd_max_conns_host)},
+    { "useragent",              PTR_V_STR(reuzbl.net.useragent,                   1,   cmd_useragent)},
 
     /* exported WebKitWebSettings properties */
-    { "zoom_level",             PTR_V_FLOAT(uzbl.behave.zoom_level,             1,   cmd_zoom_level)},
-    { "font_size",              PTR_V_INT(uzbl.behave.font_size,                1,   cmd_font_size)},
-    { "default_font_family",    PTR_V_STR(uzbl.behave.default_font_family,      1,   cmd_default_font_family)},
-    { "monospace_font_family",  PTR_V_STR(uzbl.behave.monospace_font_family,    1,   cmd_monospace_font_family)},
-    { "cursive_font_family",    PTR_V_STR(uzbl.behave.cursive_font_family,      1,   cmd_cursive_font_family)},
-    { "sans_serif_font_family", PTR_V_STR(uzbl.behave.sans_serif_font_family,   1,   cmd_sans_serif_font_family)},
-    { "serif_font_family",      PTR_V_STR(uzbl.behave.serif_font_family,        1,   cmd_serif_font_family)},
-    { "fantasy_font_family",    PTR_V_STR(uzbl.behave.fantasy_font_family,      1,   cmd_fantasy_font_family)},
-    { "monospace_size",         PTR_V_INT(uzbl.behave.monospace_size,           1,   cmd_font_size)},
-    { "minimum_font_size",      PTR_V_INT(uzbl.behave.minimum_font_size,        1,   cmd_minimum_font_size)},
-    { "disable_plugins",        PTR_V_INT(uzbl.behave.disable_plugins,          1,   cmd_disable_plugins)},
-    { "disable_scripts",        PTR_V_INT(uzbl.behave.disable_scripts,          1,   cmd_disable_scripts)},
-    { "autoload_images",        PTR_V_INT(uzbl.behave.autoload_img,             1,   cmd_autoload_img)},
-    { "autoshrink_images",      PTR_V_INT(uzbl.behave.autoshrink_img,           1,   cmd_autoshrink_img)},
-    { "enable_spellcheck",      PTR_V_INT(uzbl.behave.enable_spellcheck,        1,   cmd_enable_spellcheck)},
-    { "enable_private",         PTR_V_INT(uzbl.behave.enable_private,           1,   cmd_enable_private)},
-    { "print_backgrounds",      PTR_V_INT(uzbl.behave.print_bg,                 1,   cmd_print_bg)},
-    { "stylesheet_uri",         PTR_V_STR(uzbl.behave.style_uri,                1,   cmd_style_uri)},
-    { "resizable_text_areas",   PTR_V_INT(uzbl.behave.resizable_txt,            1,   cmd_resizable_txt)},
-    { "default_encoding",       PTR_V_STR(uzbl.behave.default_encoding,         1,   cmd_default_encoding)},
-    { "enforce_96_dpi",         PTR_V_INT(uzbl.behave.enforce_96dpi,            1,   cmd_enforce_96dpi)},
-    { "caret_browsing",         PTR_V_INT(uzbl.behave.caret_browsing,           1,   cmd_caret_browsing)},
+    { "zoom_level",             PTR_V_FLOAT(reuzbl.behave.zoom_level,             1,   cmd_zoom_level)},
+    { "font_size",              PTR_V_INT(reuzbl.behave.font_size,                1,   cmd_font_size)},
+    { "default_font_family",    PTR_V_STR(reuzbl.behave.default_font_family,      1,   cmd_default_font_family)},
+    { "monospace_font_family",  PTR_V_STR(reuzbl.behave.monospace_font_family,    1,   cmd_monospace_font_family)},
+    { "cursive_font_family",    PTR_V_STR(reuzbl.behave.cursive_font_family,      1,   cmd_cursive_font_family)},
+    { "sans_serif_font_family", PTR_V_STR(reuzbl.behave.sans_serif_font_family,   1,   cmd_sans_serif_font_family)},
+    { "serif_font_family",      PTR_V_STR(reuzbl.behave.serif_font_family,        1,   cmd_serif_font_family)},
+    { "fantasy_font_family",    PTR_V_STR(reuzbl.behave.fantasy_font_family,      1,   cmd_fantasy_font_family)},
+    { "monospace_size",         PTR_V_INT(reuzbl.behave.monospace_size,           1,   cmd_font_size)},
+    { "minimum_font_size",      PTR_V_INT(reuzbl.behave.minimum_font_size,        1,   cmd_minimum_font_size)},
+    { "disable_plugins",        PTR_V_INT(reuzbl.behave.disable_plugins,          1,   cmd_disable_plugins)},
+    { "disable_scripts",        PTR_V_INT(reuzbl.behave.disable_scripts,          1,   cmd_disable_scripts)},
+    { "autoload_images",        PTR_V_INT(reuzbl.behave.autoload_img,             1,   cmd_autoload_img)},
+    { "autoshrink_images",      PTR_V_INT(reuzbl.behave.autoshrink_img,           1,   cmd_autoshrink_img)},
+    { "enable_spellcheck",      PTR_V_INT(reuzbl.behave.enable_spellcheck,        1,   cmd_enable_spellcheck)},
+    { "enable_private",         PTR_V_INT(reuzbl.behave.enable_private,           1,   cmd_enable_private)},
+    { "print_backgrounds",      PTR_V_INT(reuzbl.behave.print_bg,                 1,   cmd_print_bg)},
+    { "stylesheet_uri",         PTR_V_STR(reuzbl.behave.style_uri,                1,   cmd_style_uri)},
+    { "resizable_text_areas",   PTR_V_INT(reuzbl.behave.resizable_txt,            1,   cmd_resizable_txt)},
+    { "default_encoding",       PTR_V_STR(reuzbl.behave.default_encoding,         1,   cmd_default_encoding)},
+    { "enforce_96_dpi",         PTR_V_INT(reuzbl.behave.enforce_96dpi,            1,   cmd_enforce_96dpi)},
+    { "caret_browsing",         PTR_V_INT(reuzbl.behave.caret_browsing,           1,   cmd_caret_browsing)},
 
   /* constants (not dumpable or writeable) */
-    { "WEBKIT_MAJOR",           PTR_C_INT(uzbl.info.webkit_major,                    NULL)},
-    { "WEBKIT_MINOR",           PTR_C_INT(uzbl.info.webkit_minor,                    NULL)},
-    { "WEBKIT_MICRO",           PTR_C_INT(uzbl.info.webkit_micro,                    NULL)},
-    { "ARCH_UZBL",              PTR_C_STR(uzbl.info.arch,                            NULL)},
-    { "COMMIT",                 PTR_C_STR(uzbl.info.commit,                          NULL)},
-    { "LOAD_PROGRESS",          PTR_C_INT(uzbl.gui.sbar.load_progress,               NULL)},
-    { "LOAD_PROGRESSBAR",       PTR_C_STR(uzbl.gui.sbar.progress_bar,                NULL)},
-    { "TITLE",                  PTR_C_STR(uzbl.gui.main_title,                       NULL)},
-    { "SELECTED_URI",           PTR_C_STR(uzbl.state.selected_url,                   NULL)},
-    { "MODE",                   PTR_C_STR(uzbl.gui.sbar.mode_indicator,              NULL)},
-    { "NAME",                   PTR_C_STR(uzbl.state.instance_name,                  NULL)},
+    { "WEBKIT_MAJOR",           PTR_C_INT(reuzbl.info.webkit_major,                    NULL)},
+    { "WEBKIT_MINOR",           PTR_C_INT(reuzbl.info.webkit_minor,                    NULL)},
+    { "WEBKIT_MICRO",           PTR_C_INT(reuzbl.info.webkit_micro,                    NULL)},
+    { "ARCH_REUZBL",              PTR_C_STR(reuzbl.info.arch,                            NULL)},
+    { "COMMIT",                 PTR_C_STR(reuzbl.info.commit,                          NULL)},
+    { "LOAD_PROGRESS",          PTR_C_INT(reuzbl.gui.sbar.load_progress,               NULL)},
+    { "LOAD_PROGRESSBAR",       PTR_C_STR(reuzbl.gui.sbar.progress_bar,                NULL)},
+    { "TITLE",                  PTR_C_STR(reuzbl.gui.main_title,                       NULL)},
+    { "SELECTED_URI",           PTR_C_STR(reuzbl.state.selected_url,                   NULL)},
+    { "MODE",                   PTR_C_STR(reuzbl.gui.sbar.mode_indicator,              NULL)},
+    { "NAME",                   PTR_C_STR(reuzbl.state.instance_name,                  NULL)},
 
     { NULL,                     {.ptr.s = NULL, .type = TYPE_INT, .dump = 0, .writeable = 0, .func = NULL}}
 };
@@ -249,9 +249,9 @@ const struct {
 void
 create_var_to_name_hash() {
     const struct var_name_to_ptr_t *n2v_p = var_name_to_ptr;
-    uzbl.comm.proto_var = g_hash_table_new(g_str_hash, g_str_equal);
+    reuzbl.comm.proto_var = g_hash_table_new(g_str_hash, g_str_equal);
     while(n2v_p->name) {
-        g_hash_table_insert(uzbl.comm.proto_var,
+        g_hash_table_insert(reuzbl.comm.proto_var,
                 (gpointer) n2v_p->name,
                 (gpointer) &n2v_p->cp);
         n2v_p++;
@@ -285,7 +285,7 @@ get_exp_type(const gchar *s) {
 */
 gchar *
 expand(const char *s, guint recurse) {
-    uzbl_cmdprop *c;
+    reuzbl_cmdprop *c;
     enum exp_type etype;
     char *end_simple_var = "^°!\"§$%&/()=?'`'+~*'#-.:,;@<>| \\{}[]¹²³¼½";
     char *ret = NULL;
@@ -342,7 +342,7 @@ expand(const char *s, guint recurse) {
 
                 if(etype == EXP_SIMPLE_VAR ||
                    etype == EXP_BRACED_VAR) {
-                    if( (c = g_hash_table_lookup(uzbl.comm.proto_var, ret)) ) {
+                    if( (c = g_hash_table_lookup(reuzbl.comm.proto_var, ret)) ) {
                         if(c->type == TYPE_STR && *c->ptr.s != NULL) {
                             g_string_append(buf, (gchar *)*c->ptr.s);
                         }
@@ -383,7 +383,7 @@ expand(const char *s, guint recurse) {
                 else if(recurse != 2 &&
                         etype == EXP_JS) {
                     mycmd = expand(ret, 2);
-                    eval_js(uzbl.gui.web_view, mycmd, js_ret);
+                    eval_js(reuzbl.gui.web_view, mycmd, js_ret);
                     g_free(mycmd);
 
                     if(js_ret->str) {
@@ -430,18 +430,18 @@ expand(const char *s, guint recurse) {
 void
 send_event(int type, const gchar *details) {
     if(type < LAST_EVENT) {
-        if (uzbl.state.verbose) {
-            printf("%s [%s] %s\n", event_table[type], uzbl.state.instance_name, details);
+        if (reuzbl.state.verbose) {
+            printf("%s [%s] %s\n", event_table[type], reuzbl.state.instance_name, details);
             fflush(stdout);
         }
 
-        g_free(uzbl.behave.last_event_name);
-        uzbl.behave.last_event_name = g_strdup(event_table[type]);
-        g_free(uzbl.behave.last_event_details);
-        uzbl.behave.last_event_details = g_strdup(details);
+        g_free(reuzbl.behave.last_event_name);
+        reuzbl.behave.last_event_name = g_strdup(event_table[type]);
+        g_free(reuzbl.behave.last_event_details);
+        reuzbl.behave.last_event_details = g_strdup(details);
 
         Action *act;
-        if ((act = g_hash_table_lookup(uzbl.handlers, event_table[type]))) {
+        if ((act = g_hash_table_lookup(reuzbl.handlers, event_table[type]))) {
             gchar* param = expand(act->param, 0);
             parse_command(act->name, param, NULL);
             g_free(param);
@@ -520,7 +520,7 @@ parseenv (char* string) {
         }
 
         g_free (envname);
-        g_strfreev (env); // somebody said this breaks uzbl
+        g_strfreev (env); // somebody said this breaks reuzbl
         i++;
     }
 
@@ -557,18 +557,18 @@ setup_signal(int signr, sigfunc *shandler) {
 
 void
 clean_up(void) {
-    if (uzbl.behave.fifo_dir)
-        unlink (uzbl.comm.fifo_path);
-    if (uzbl.behave.socket_dir)
-        unlink (uzbl.comm.socket_path);
+    if (reuzbl.behave.fifo_dir)
+        unlink (reuzbl.comm.fifo_path);
+    if (reuzbl.behave.socket_dir)
+        unlink (reuzbl.comm.socket_path);
 
-    g_free(uzbl.state.executable_path);
-    g_free(uzbl.state.keycmd);
-    uzbl.state.keycmd_pos = 0;
-    g_hash_table_destroy(uzbl.bindings);
-    g_hash_table_destroy(uzbl.handlers);
-    g_hash_table_destroy(uzbl.buttons);
-    g_hash_table_destroy(uzbl.behave.commands);
+    g_free(reuzbl.state.executable_path);
+    g_free(reuzbl.state.keycmd);
+    reuzbl.state.keycmd_pos = 0;
+    g_hash_table_destroy(reuzbl.bindings);
+    g_hash_table_destroy(reuzbl.handlers);
+    g_hash_table_destroy(reuzbl.buttons);
+    g_hash_table_destroy(reuzbl.behave.commands);
 }
 
 /* --- SIGNAL HANDLER --- */
@@ -598,27 +598,27 @@ navigation_decision_cb (WebKitWebView *web_view, WebKitWebFrame *frame, WebKitNe
     const gchar* uri = webkit_network_request_get_uri (request);
     gboolean decision_made = FALSE;
 
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf("Navigation requested -> %s\n", uri);
 
-    // if (uzbl.behave.scheme_handler) {
-    if (g_hash_table_lookup(uzbl.handlers, "SCHEME_REQUEST")) {
+    // if (reuzbl.behave.scheme_handler) {
+    if (g_hash_table_lookup(reuzbl.handlers, "SCHEME_REQUEST")) {
         GString *s = g_string_new ("");
         g_string_printf(s, "'%s'", uri);
 
-        //run_handler(uzbl.behave.scheme_handler, s->str);
+        //run_handler(reuzbl.behave.scheme_handler, s->str);
         send_event(SCHEME_REQUEST, s->str);
 
-        if(uzbl.comm.sync_stdout && strcmp (uzbl.comm.sync_stdout, "") != 0) {
-            char *p = strchr(uzbl.comm.sync_stdout, '\n' );
+        if(reuzbl.comm.sync_stdout && strcmp (reuzbl.comm.sync_stdout, "") != 0) {
+            char *p = strchr(reuzbl.comm.sync_stdout, '\n' );
             if ( p != NULL ) *p = '\0';
-            if (!strcmp(uzbl.comm.sync_stdout, "USED")) {
+            if (!strcmp(reuzbl.comm.sync_stdout, "USED")) {
                 webkit_web_policy_decision_ignore(policy_decision);
                 decision_made = TRUE;
             }
         }
-        if (uzbl.comm.sync_stdout)
-            uzbl.comm.sync_stdout = strfree(uzbl.comm.sync_stdout);
+        if (reuzbl.comm.sync_stdout)
+            reuzbl.comm.sync_stdout = strfree(reuzbl.comm.sync_stdout);
 
         g_string_free(s, TRUE);
     }
@@ -636,7 +636,7 @@ new_window_cb (WebKitWebView *web_view, WebKitWebFrame *frame, WebKitNetworkRequ
     (void) policy_decision;
     (void) user_data;
     const gchar* uri = webkit_network_request_get_uri (request);
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf("New window requested -> %s \n", uri);
     webkit_web_policy_decision_use(policy_decision);
     send_event(NEW_WINDOW, uri);
@@ -665,12 +665,12 @@ create_web_view_cb (WebKitWebView  *web_view, WebKitWebFrame *frame, gpointer us
     (void) web_view;
     (void) frame;
     (void) user_data;
-    if (uzbl.state.selected_url != NULL) {
-        if (uzbl.state.verbose)
-            printf("\nNew web view -> %s\n",uzbl.state.selected_url);
-        new_window_load_uri(uzbl.state.selected_url);
+    if (reuzbl.state.selected_url != NULL) {
+        if (reuzbl.state.verbose)
+            printf("\nNew web view -> %s\n",reuzbl.state.selected_url);
+        new_window_load_uri(reuzbl.state.selected_url);
     } else {
-        if (uzbl.state.verbose)
+        if (reuzbl.state.verbose)
             printf("New web view -> %s\n","Nothing to open, exiting");
     }
     return (NULL);
@@ -680,20 +680,20 @@ gboolean
 download_cb (WebKitWebView *web_view, GObject *download, gpointer user_data) {
     (void) web_view;
     (void) user_data;
-    // if (uzbl.behave.download_handler) {
+    // if (reuzbl.behave.download_handler) {
     //     const gchar* uri = webkit_download_get_uri ((WebKitDownload*)download);
-    //     if (uzbl.state.verbose)
+    //     if (reuzbl.state.verbose)
     //         printf("Download -> %s\n",uri);
     //     /* if urls not escaped, we may have to escape and quote uri before this call */
 
     //     GString *args = g_string_new(uri);
 
-    //     if (uzbl.net.proxy_url) {
+    //     if (reuzbl.net.proxy_url) {
     //        g_string_append_c(args, ' ');
-    //        g_string_append(args, uzbl.net.proxy_url);
+    //        g_string_append(args, reuzbl.net.proxy_url);
     //     }
 
-    //     run_handler(uzbl.behave.download_handler, args->str);
+    //     run_handler(reuzbl.behave.download_handler, args->str);
 
     //     g_string_free(args, TRUE);
     // }
@@ -727,33 +727,33 @@ scroll (GtkAdjustment* bar, GArray *argv) {
 void
 scroll_begin(WebKitWebView* page, GArray *argv, GString *result) {
     (void) page; (void) argv; (void) result;
-    gtk_adjustment_set_value (uzbl.gui.bar_v, gtk_adjustment_get_lower(uzbl.gui.bar_v));
+    gtk_adjustment_set_value (reuzbl.gui.bar_v, gtk_adjustment_get_lower(reuzbl.gui.bar_v));
 }
 
 void
 scroll_end(WebKitWebView* page, GArray *argv, GString *result) {
     (void) page; (void) argv; (void) result;
-    gtk_adjustment_set_value (uzbl.gui.bar_v, gtk_adjustment_get_upper(uzbl.gui.bar_v) -
-                              gtk_adjustment_get_page_size(uzbl.gui.bar_v));
+    gtk_adjustment_set_value (reuzbl.gui.bar_v, gtk_adjustment_get_upper(reuzbl.gui.bar_v) -
+                              gtk_adjustment_get_page_size(reuzbl.gui.bar_v));
 }
 
 void
 scroll_vert(WebKitWebView* page, GArray *argv, GString *result) {
     (void) page; (void) result;
-    scroll(uzbl.gui.bar_v, argv);
+    scroll(reuzbl.gui.bar_v, argv);
 }
 
 void
 scroll_horz(WebKitWebView* page, GArray *argv, GString *result) {
     (void) page; (void) result;
-    scroll(uzbl.gui.bar_h, argv);
+    scroll(reuzbl.gui.bar_h, argv);
 }
 
 void
 cmd_set_geometry() {
-    if(!gtk_window_parse_geometry(GTK_WINDOW(uzbl.gui.main_window), uzbl.gui.geometry)) {
-        if(uzbl.state.verbose)
-            printf("Error in geometry string: %s\n", uzbl.gui.geometry);
+    if(!gtk_window_parse_geometry(GTK_WINDOW(reuzbl.gui.main_window), reuzbl.gui.geometry)) {
+        if(reuzbl.state.verbose)
+            printf("Error in geometry string: %s\n", reuzbl.gui.geometry);
     }
     /* update geometry var with the actual geometry
        this is necessary as some WMs don't seem to honour
@@ -765,10 +765,10 @@ cmd_set_geometry() {
 
 void
 cmd_set_status() {
-    if (!uzbl.behave.show_status) {
-        gtk_widget_hide(uzbl.gui.mainbar);
+    if (!reuzbl.behave.show_status) {
+        gtk_widget_hide(reuzbl.gui.mainbar);
     } else {
-        gtk_widget_show(uzbl.gui.mainbar);
+        gtk_widget_show(reuzbl.gui.mainbar);
     }
     update_title();
 }
@@ -788,12 +788,12 @@ toggle_status_cb (WebKitWebView* page, GArray *argv, GString *result) {
     (void)argv;
     (void)result;
 
-    if (uzbl.behave.show_status) {
-        gtk_widget_hide(uzbl.gui.mainbar);
+    if (reuzbl.behave.show_status) {
+        gtk_widget_hide(reuzbl.gui.mainbar);
     } else {
-        gtk_widget_show(uzbl.gui.mainbar);
+        gtk_widget_show(reuzbl.gui.mainbar);
     }
-    uzbl.behave.show_status = !uzbl.behave.show_status;
+    reuzbl.behave.show_status = !reuzbl.behave.show_status;
     update_title();
 }
 
@@ -803,11 +803,11 @@ link_hover_cb (WebKitWebView* page, const gchar* title, const gchar* link, gpoin
     (void) title;
     (void) data;
     //Set selected_url state variable
-    g_free(uzbl.state.selected_url);
-    uzbl.state.selected_url = NULL;
+    g_free(reuzbl.state.selected_url);
+    reuzbl.state.selected_url = NULL;
     if (link) {
-        uzbl.state.selected_url = g_strdup(link);
-        send_event(LINK_HOVER, uzbl.state.selected_url);
+        reuzbl.state.selected_url = g_strdup(link);
+        send_event(LINK_HOVER, reuzbl.state.selected_url);
     }
     update_title();
 }
@@ -817,21 +817,21 @@ title_change_cb (WebKitWebView* web_view, GParamSpec param_spec) {
     (void) web_view;
     (void) param_spec;
     const gchar *title = webkit_web_view_get_title(web_view);
-    if (uzbl.gui.main_title)
-        g_free (uzbl.gui.main_title);
-    uzbl.gui.main_title = title ? g_strdup (title) : g_strdup ("(no title)");
+    if (reuzbl.gui.main_title)
+        g_free (reuzbl.gui.main_title);
+    reuzbl.gui.main_title = title ? g_strdup (title) : g_strdup ("(no title)");
     update_title();
-    send_event(TITLE_CHANGED, uzbl.gui.main_title);
+    send_event(TITLE_CHANGED, reuzbl.gui.main_title);
 }
 
 void
 progress_change_cb (WebKitWebView* page, gint progress, gpointer data) {
     (void) page;
     (void) data;
-    uzbl.gui.sbar.load_progress = progress;
+    reuzbl.gui.sbar.load_progress = progress;
 
-    g_free(uzbl.gui.sbar.progress_bar);
-    uzbl.gui.sbar.progress_bar = build_progressbar_ascii(uzbl.gui.sbar.load_progress);
+    g_free(reuzbl.gui.sbar.progress_bar);
+    reuzbl.gui.sbar.progress_bar = build_progressbar_ascii(reuzbl.gui.sbar.load_progress);
 
     update_title();
 }
@@ -852,16 +852,16 @@ load_finish_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
     (void) page;
     (void) data;
 
-    // if (uzbl.behave.load_finish_handler)
-    //     run_handler(uzbl.behave.load_finish_handler, "");
+    // if (reuzbl.behave.load_finish_handler)
+    //     run_handler(reuzbl.behave.load_finish_handler, "");
 
     send_event(LOAD_FINISH, webkit_web_frame_get_uri(frame));
 }
 
 void clear_keycmd() {
-  g_free(uzbl.state.keycmd);
-  uzbl.state.keycmd = g_strdup("");
-  uzbl.state.keycmd_pos = 0;
+  g_free(reuzbl.state.keycmd);
+  reuzbl.state.keycmd = g_strdup("");
+  reuzbl.state.keycmd_pos = 0;
 }
 
 void
@@ -869,11 +869,11 @@ load_start_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
     (void) page;
     (void) frame;
     (void) data;
-    uzbl.gui.sbar.load_progress = 0;
-    // if (uzbl.behave.load_start_handler)
-    //     run_handler(uzbl.behave.load_start_handler, "");
+    reuzbl.gui.sbar.load_progress = 0;
+    // if (reuzbl.behave.load_start_handler)
+    //     run_handler(reuzbl.behave.load_start_handler, "");
 
-    send_event(LOAD_START, uzbl.state.uri);
+    send_event(LOAD_START, reuzbl.state.uri);
 }
 
 void
@@ -893,15 +893,15 @@ void
 load_commit_cb (WebKitWebView* page, WebKitWebFrame* frame, gpointer data) {
     (void) page;
     (void) data;
-    g_free (uzbl.state.uri);
+    g_free (reuzbl.state.uri);
     GString* newuri = g_string_new (webkit_web_frame_get_uri (frame));
-    uzbl.state.uri = g_string_free (newuri, FALSE);
-    if (uzbl.behave.reset_command_mode && uzbl.behave.insert_mode) {
-        set_insert_mode(uzbl.behave.always_insert_mode);
+    reuzbl.state.uri = g_string_free (newuri, FALSE);
+    if (reuzbl.behave.reset_command_mode && reuzbl.behave.insert_mode) {
+        set_insert_mode(reuzbl.behave.always_insert_mode);
         update_title();
     }
-    // if (uzbl.behave.load_commit_handler)
-    //     run_handler(uzbl.behave.load_commit_handler, uzbl.state.uri);
+    // if (reuzbl.behave.load_commit_handler)
+    //     run_handler(reuzbl.behave.load_commit_handler, reuzbl.state.uri);
 
     /* event message */
     send_event(LOAD_COMMIT, webkit_web_frame_get_uri (frame));
@@ -950,7 +950,7 @@ struct {const char *key; CommandInfo value;} cmdlist[] =
     { "sh",                 { spawn_sh,                 0 }    },
     { "sync_sh",            { spawn_sh_sync,            0 }    }, // needed for cookie handler
     { "talk_to_socket",     { talk_to_socket,           0 }    },
-    { "exit",               { close_uzbl,               0 }    },
+    { "exit",               { close_reuzbl,               0 }    },
     { "search",             { search_forward_text,      TRUE } },
     { "search_reverse",     { search_reverse_text,      TRUE } },
     { "dehilight",          { dehilight,                0 }    },
@@ -973,10 +973,10 @@ void
 commands_hash(void)
 {
     unsigned int i;
-    uzbl.behave.commands = g_hash_table_new(g_str_hash, g_str_equal);
+    reuzbl.behave.commands = g_hash_table_new(g_str_hash, g_str_equal);
 
     for (i = 0; i < LENGTH(cmdlist); i++)
-        g_hash_table_insert(uzbl.behave.commands, (gpointer) cmdlist[i].key, &cmdlist[i].value);
+        g_hash_table_insert(reuzbl.behave.commands, (gpointer) cmdlist[i].key, &cmdlist[i].value);
 }
 
 /* -- CORE FUNCTIONS -- */
@@ -1080,15 +1080,15 @@ act_dump_config() {
 
 void
 set_keycmd() {
-    uzbl.state.keycmd_pos = strlen(uzbl.state.keycmd);
+    reuzbl.state.keycmd_pos = strlen(reuzbl.state.keycmd);
     run_keycmd(FALSE);
     update_title();
 }
 
 void
 set_mode_indicator() {
-    uzbl.gui.sbar.mode_indicator = (uzbl.behave.insert_mode ?
-        uzbl.behave.insert_indicator : uzbl.behave.cmd_indicator);
+    reuzbl.gui.sbar.mode_indicator = (reuzbl.behave.insert_mode ?
+        reuzbl.behave.insert_indicator : reuzbl.behave.cmd_indicator);
 }
 
 void
@@ -1099,7 +1099,7 @@ update_indicator() {
 
 void
 set_insert_mode(gboolean mode) {
-    uzbl.behave.insert_mode = mode;
+    reuzbl.behave.insert_mode = mode;
     set_mode_indicator();
 }
 
@@ -1114,7 +1114,7 @@ toggle_insert_mode(WebKitWebView *page, GArray *argv, GString *result) {
             set_insert_mode(TRUE);
         }
     } else {
-        set_insert_mode( !uzbl.behave.insert_mode );
+        set_insert_mode( !reuzbl.behave.insert_mode );
     }
 
     update_title();
@@ -1175,12 +1175,12 @@ JSStaticFunction js_static_functions[] = {
 void
 js_init() {
     /* This function creates the class and its definition, only once */
-    if (!uzbl.js.initialized) {
+    if (!reuzbl.js.initialized) {
         /* it would be pretty cool to make this dynamic */
-        uzbl.js.classdef = kJSClassDefinitionEmpty;
-        uzbl.js.classdef.staticFunctions = js_static_functions;
+        reuzbl.js.classdef = kJSClassDefinitionEmpty;
+        reuzbl.js.classdef.staticFunctions = js_static_functions;
 
-        uzbl.js.classref = JSClassCreate(&uzbl.js.classdef);
+        reuzbl.js.classref = JSClassCreate(&reuzbl.js.classdef);
     }
 }
 
@@ -1203,10 +1203,10 @@ eval_js(WebKitWebView * web_view, gchar *script, GString *result) {
     context = webkit_web_frame_get_global_context(frame);
     globalobject = JSContextGetGlobalObject(context);
 
-    /* uzbl javascript namespace */
-    var_name = JSStringCreateWithUTF8CString("Uzbl");
+    /* reuzbl javascript namespace */
+    var_name = JSStringCreateWithUTF8CString("reUzbl");
     JSObjectSetProperty(context, globalobject, var_name,
-                        JSObjectMake(context, uzbl.js.classref, NULL),
+                        JSObjectMake(context, reuzbl.js.classref, NULL),
                         kJSClassAttributeNone, NULL);
 
     /* evaluate the script and get return value*/
@@ -1258,7 +1258,7 @@ run_external_js (WebKitWebView * web_view, GArray *argv, GString *result) {
             g_free (line);
         }
 
-        if (uzbl.state.verbose)
+        if (reuzbl.state.verbose)
             printf ("External JavaScript file %s loaded\n", argv_idx(argv, 0));
 
         if (argv_idx (argv, 1)) {
@@ -1275,18 +1275,18 @@ run_external_js (WebKitWebView * web_view, GArray *argv, GString *result) {
 void
 search_text (WebKitWebView *page, GArray *argv, const gboolean forward) {
     if (argv_idx(argv, 0) && (*argv_idx(argv, 0) != '\0')) {
-        if (g_strcmp0 (uzbl.state.searchtx, argv_idx(argv, 0)) != 0) {
+        if (g_strcmp0 (reuzbl.state.searchtx, argv_idx(argv, 0)) != 0) {
             webkit_web_view_unmark_text_matches (page);
             webkit_web_view_mark_text_matches (page, argv_idx(argv, 0), FALSE, 0);
-            uzbl.state.searchtx = g_strdup(argv_idx(argv, 0));
+            reuzbl.state.searchtx = g_strdup(argv_idx(argv, 0));
         }
     }
 
-    if (uzbl.state.searchtx) {
-        if (uzbl.state.verbose)
-            printf ("Searching: %s\n", uzbl.state.searchtx);
+    if (reuzbl.state.searchtx) {
+        if (reuzbl.state.verbose)
+            printf ("Searching: %s\n", reuzbl.state.searchtx);
         webkit_web_view_set_highlight_text_matches (page, TRUE);
-        webkit_web_view_search_text (page, uzbl.state.searchtx, FALSE, forward, TRUE);
+        webkit_web_view_search_text (page, reuzbl.state.searchtx, FALSE, forward, TRUE);
     }
 }
 
@@ -1311,16 +1311,16 @@ dehilight (WebKitWebView *page, GArray *argv, GString *result) {
 
 void
 new_window_load_uri (const gchar * uri) {
-    // if (uzbl.behave.new_window) {
-    if (g_hash_table_lookup(uzbl.handlers, "NEW_WINDOW")) {
+    // if (reuzbl.behave.new_window) {
+    if (g_hash_table_lookup(reuzbl.handlers, "NEW_WINDOW")) {
         GString *s = g_string_new ("");
         g_string_printf(s, "'%s'", uri);
-        // run_handler(uzbl.behave.new_window, s->str);
+        // run_handler(reuzbl.behave.new_window, s->str);
         send_event(NEW_WINDOW, s->str);
         return;
     }
     GString* to_execute = g_string_new ("");
-    g_string_append_printf (to_execute, "%s --uri '%s'", uzbl.state.executable_path, uri);
+    g_string_append_printf (to_execute, "%s --uri '%s'", reuzbl.state.executable_path, uri);
     int i;
     for (i = 0; entries[i].long_name != NULL; i++) {
         if ((entries[i].arg == G_OPTION_ARG_STRING) && (strcmp(entries[i].long_name,"uri")!=0) && (strcmp(entries[i].long_name,"name")!=0)) {
@@ -1330,7 +1330,7 @@ new_window_load_uri (const gchar * uri) {
             }
         }
     }
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf("\n%s\n", to_execute->str);
     g_spawn_command_line_async (to_execute->str, NULL);
     /* TODO: should we just report the uri as event detail? */
@@ -1357,8 +1357,8 @@ keycmd (WebKitWebView *page, GArray *argv, GString *result) {
     (void)page;
     (void)argv;
     (void)result;
-    uzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
-    uzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
+    reuzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
+    reuzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
     run_keycmd(FALSE);
     update_title();
 }
@@ -1368,8 +1368,8 @@ keycmd_nl (WebKitWebView *page, GArray *argv, GString *result) {
     (void)page;
     (void)argv;
     (void)result;
-    uzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
-    uzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
+    reuzbl.state.keycmd = g_strdup(argv_idx(argv, 0));
+    reuzbl.state.keycmd_pos = strlen(argv_idx(argv, 0));
     run_keycmd(TRUE);
     update_title();
 }
@@ -1380,22 +1380,22 @@ keycmd_bs (WebKitWebView *page, GArray *argv, GString *result) {
     (void)page;
     (void)argv;
     (void)result;
-    int len = strlen(uzbl.state.keycmd);
-    prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + /*len*/ uzbl.state.keycmd_pos);
+    int len = strlen(reuzbl.state.keycmd);
+    prev = g_utf8_find_prev_char(reuzbl.state.keycmd, reuzbl.state.keycmd + /*len*/ reuzbl.state.keycmd_pos);
     if (prev) {
-        uzbl.state.keycmd[prev - uzbl.state.keycmd] = '\0';
-        if (prev - uzbl.state.keycmd < len - 1) {
-            GString* keycmd = g_string_new(uzbl.state.keycmd);
-            g_string_append(keycmd, &uzbl.state.keycmd[prev - uzbl.state.keycmd + 1]);
-            uzbl.state.keycmd = g_string_free(keycmd, FALSE);
+        reuzbl.state.keycmd[prev - reuzbl.state.keycmd] = '\0';
+        if (prev - reuzbl.state.keycmd < len - 1) {
+            GString* keycmd = g_string_new(reuzbl.state.keycmd);
+            g_string_append(keycmd, &reuzbl.state.keycmd[prev - reuzbl.state.keycmd + 1]);
+            reuzbl.state.keycmd = g_string_free(keycmd, FALSE);
         }
-        uzbl.state.keycmd_pos--;
+        reuzbl.state.keycmd_pos--;
     }
     update_title();
 }
 
 void
-close_uzbl (WebKitWebView *page, GArray *argv, GString *result) {
+close_reuzbl (WebKitWebView *page, GArray *argv, GString *result) {
     (void)page;
     (void)argv;
     (void)result;
@@ -1405,7 +1405,7 @@ close_uzbl (WebKitWebView *page, GArray *argv, GString *result) {
 /* --Statusbar functions-- */
 char*
 build_progressbar_ascii(int percent) {
-   int width=uzbl.gui.sbar.progress_w;
+   int width=reuzbl.gui.sbar.progress_w;
    int i;
    double l;
    GString *bar = g_string_new("");
@@ -1414,10 +1414,10 @@ build_progressbar_ascii(int percent) {
    l = (int)(l+.5)>=(int)l ? l+.5 : l;
 
    for(i=0; i<(int)l; i++)
-       g_string_append(bar, uzbl.gui.sbar.progress_s);
+       g_string_append(bar, reuzbl.gui.sbar.progress_s);
 
    for(; i<width; i++)
-       g_string_append(bar, uzbl.gui.sbar.progress_u);
+       g_string_append(bar, reuzbl.gui.sbar.progress_u);
 
    return g_string_free(bar, FALSE);
 }
@@ -1433,23 +1433,23 @@ sharg_append(GArray *a, const gchar *str) {
 gboolean
 run_command (const gchar *command, const guint npre, const gchar **args,
              const gboolean sync, char **output_stdout) {
-   //command <uzbl conf> <uzbl pid> <uzbl win id> <uzbl fifo file> <uzbl socket file> [args]
+   //command <reuzbl conf> <reuzbl pid> <reuzbl win id> <reuzbl fifo file> <reuzbl socket file> [args]
     GError *err = NULL;
 
     GArray *a = g_array_new (TRUE, FALSE, sizeof(gchar*));
     gchar *pid = itos(getpid());
-    gchar *xwin = itos(uzbl.xwin);
+    gchar *xwin = itos(reuzbl.xwin);
     guint i;
     sharg_append(a, command);
     for (i = 0; i < npre; i++) /* add n args before the default vars */
         sharg_append(a, args[i]);
-    sharg_append(a, uzbl.state.config_file);
+    sharg_append(a, reuzbl.state.config_file);
     sharg_append(a, pid);
     sharg_append(a, xwin);
-    sharg_append(a, uzbl.comm.fifo_path);
-    sharg_append(a, uzbl.comm.socket_path);
-    sharg_append(a, uzbl.state.uri);
-    sharg_append(a, uzbl.gui.main_title);
+    sharg_append(a, reuzbl.comm.fifo_path);
+    sharg_append(a, reuzbl.comm.socket_path);
+    sharg_append(a, reuzbl.state.uri);
+    sharg_append(a, reuzbl.gui.main_title);
 
     for (i = npre; i < g_strv_length((gchar**)args); i++)
         sharg_append(a, args[i]);
@@ -1463,7 +1463,7 @@ run_command (const gchar *command, const guint npre, const gchar **args,
     } else result = g_spawn_async(NULL, (gchar **)a->data, NULL, G_SPAWN_SEARCH_PATH,
                                   NULL, NULL, NULL, &err);
 
-    if (uzbl.state.verbose) {
+    if (reuzbl.state.verbose) {
         GString *s = g_string_new("spawned:");
         for (i = 0; i < (a->len); i++) {
             gchar *qarg = g_shell_quote(g_array_index(a, gchar*, i));
@@ -1538,13 +1538,13 @@ spawn_sync(WebKitWebView *web_view, GArray *argv, GString *result) {
 
     if (argv_idx(argv, 0))
         run_command(argv_idx(argv, 0), 0, ((const gchar **) (argv->data + sizeof(gchar*))),
-                    TRUE, &uzbl.comm.sync_stdout);
+                    TRUE, &reuzbl.comm.sync_stdout);
 }
 
 void
 spawn_sh(WebKitWebView *web_view, GArray *argv, GString *result) {
     (void)web_view; (void)result;
-    if (!uzbl.behave.shell_cmd) {
+    if (!reuzbl.behave.shell_cmd) {
         g_printerr ("spawn_sh: shell_cmd is not set!\n");
         return;
     }
@@ -1552,7 +1552,7 @@ spawn_sh(WebKitWebView *web_view, GArray *argv, GString *result) {
     guint i;
     gchar *spacer = g_strdup("");
     g_array_insert_val(argv, 1, spacer);
-    gchar **cmd = split_quoted(uzbl.behave.shell_cmd, TRUE);
+    gchar **cmd = split_quoted(reuzbl.behave.shell_cmd, TRUE);
 
     for (i = 1; i < g_strv_length(cmd); i++)
         g_array_prepend_val(argv, cmd[i]);
@@ -1565,7 +1565,7 @@ spawn_sh(WebKitWebView *web_view, GArray *argv, GString *result) {
 void
 spawn_sh_sync(WebKitWebView *web_view, GArray *argv, GString *result) {
     (void)web_view; (void)result;
-    if (!uzbl.behave.shell_cmd) {
+    if (!reuzbl.behave.shell_cmd) {
         g_printerr ("spawn_sh_sync: shell_cmd is not set!\n");
         return;
     }
@@ -1573,13 +1573,13 @@ spawn_sh_sync(WebKitWebView *web_view, GArray *argv, GString *result) {
     guint i;
     gchar *spacer = g_strdup("");
     g_array_insert_val(argv, 1, spacer);
-    gchar **cmd = split_quoted(uzbl.behave.shell_cmd, TRUE);
+    gchar **cmd = split_quoted(reuzbl.behave.shell_cmd, TRUE);
 
     for (i = 1; i < g_strv_length(cmd); i++)
         g_array_prepend_val(argv, cmd[i]);
 
     if (cmd) run_command(cmd[0], g_strv_length(cmd) + 1, (const gchar **) argv->data,
-                         TRUE, &uzbl.comm.sync_stdout);
+                         TRUE, &reuzbl.comm.sync_stdout);
     g_free (spacer);
     g_strfreev (cmd);
 }
@@ -1596,7 +1596,7 @@ talk_to_socket(WebKitWebView *web_view, GArray *argv, GString *result) {
     struct iovec* iov;
     guint i;
 
-    if(uzbl.comm.sync_stdout) uzbl.comm.sync_stdout = strfree(uzbl.comm.sync_stdout);
+    if(reuzbl.comm.sync_stdout) reuzbl.comm.sync_stdout = strfree(reuzbl.comm.sync_stdout);
 
     /* This function could be optimised by storing a hash table of socket paths
        and associated connected file descriptors rather than closing and
@@ -1674,15 +1674,15 @@ talk_to_socket(WebKitWebView *web_view, GArray *argv, GString *result) {
 
     /* if there is a response, read it */
     if(len) {
-        uzbl.comm.sync_stdout = g_malloc(len + 1);
-        if(!uzbl.comm.sync_stdout) {
+        reuzbl.comm.sync_stdout = g_malloc(len + 1);
+        if(!reuzbl.comm.sync_stdout) {
             g_printerr("talk_to_socket: failed to allocate %d bytes\n", len);
             close(fd);
             return;
         }
-        uzbl.comm.sync_stdout[len] = 0; /* ensure result is null terminated */
+        reuzbl.comm.sync_stdout[len] = 0; /* ensure result is null terminated */
 
-        ret = read(fd, uzbl.comm.sync_stdout, len);
+        ret = read(fd, reuzbl.comm.sync_stdout, len);
         if(ret == -1) {
             g_printerr("talk_to_socket: failed to read from socket (%s)\n",
                 strerror(errno));
@@ -1700,7 +1700,7 @@ void
 parse_command(const char *cmd, const char *param, GString *result) {
     CommandInfo *c;
 
-    if ((c = g_hash_table_lookup(uzbl.behave.commands, cmd))) {
+    if ((c = g_hash_table_lookup(reuzbl.behave.commands, cmd))) {
             guint i;
             gchar **par = split_quoted(param, TRUE);
             GArray *a = g_array_new (TRUE, FALSE, sizeof(gchar*));
@@ -1715,13 +1715,13 @@ parse_command(const char *cmd, const char *param, GString *result) {
             if (result == NULL) {
                 GString *result_print = g_string_new("");
 
-                c->function(uzbl.gui.web_view, a, result_print);
+                c->function(reuzbl.gui.web_view, a, result_print);
                 if (result_print->len)
                     printf("%*s\n", (int)result_print->len, result_print->str);
 
                 g_string_free(result_print, TRUE);
             } else {
-                c->function(uzbl.gui.web_view, a, result);
+                c->function(reuzbl.gui.web_view, a, result);
             }
             g_strfreev (par);
             g_array_free (a, TRUE);
@@ -1734,13 +1734,13 @@ void
 set_proxy_url() {
     SoupURI *suri;
 
-    if(uzbl.net.proxy_url == NULL || *uzbl.net.proxy_url == ' ') {
-        soup_session_remove_feature_by_type(uzbl.net.soup_session,
+    if(reuzbl.net.proxy_url == NULL || *reuzbl.net.proxy_url == ' ') {
+        soup_session_remove_feature_by_type(reuzbl.net.soup_session,
                 (GType) SOUP_SESSION_PROXY_URI);
     }
     else {
-        suri = soup_uri_new(uzbl.net.proxy_url);
-        g_object_set(G_OBJECT(uzbl.net.soup_session),
+        suri = soup_uri_new(reuzbl.net.proxy_url);
+        g_object_set(G_OBJECT(reuzbl.net.soup_session),
                 SOUP_SESSION_PROXY_URI,
                 suri, NULL);
         soup_uri_free(suri);
@@ -1750,201 +1750,201 @@ set_proxy_url() {
 
 void
 set_icon() {
-    if(file_exists(uzbl.gui.icon)) {
-        if (uzbl.gui.main_window)
-            gtk_window_set_icon_from_file (GTK_WINDOW (uzbl.gui.main_window), uzbl.gui.icon, NULL);
+    if(file_exists(reuzbl.gui.icon)) {
+        if (reuzbl.gui.main_window)
+            gtk_window_set_icon_from_file (GTK_WINDOW (reuzbl.gui.main_window), reuzbl.gui.icon, NULL);
     } else {
-        g_printerr ("Icon \"%s\" not found. ignoring.\n", uzbl.gui.icon);
+        g_printerr ("Icon \"%s\" not found. ignoring.\n", reuzbl.gui.icon);
     }
 }
 
 void
 cmd_load_uri() {
     GArray *a = g_array_new (TRUE, FALSE, sizeof(gchar*));
-    g_array_append_val (a, uzbl.state.uri);
-    load_uri(uzbl.gui.web_view, a, NULL);
+    g_array_append_val (a, reuzbl.state.uri);
+    load_uri(reuzbl.gui.web_view, a, NULL);
     g_array_free (a, TRUE);
 }
 
 void
 cmd_always_insert_mode() {
-    set_insert_mode(uzbl.behave.always_insert_mode);
+    set_insert_mode(reuzbl.behave.always_insert_mode);
     update_title();
 }
 
 void
 cmd_max_conns() {
-    g_object_set(G_OBJECT(uzbl.net.soup_session),
-            SOUP_SESSION_MAX_CONNS, uzbl.net.max_conns, NULL);
+    g_object_set(G_OBJECT(reuzbl.net.soup_session),
+            SOUP_SESSION_MAX_CONNS, reuzbl.net.max_conns, NULL);
 }
 
 void
 cmd_max_conns_host() {
-    g_object_set(G_OBJECT(uzbl.net.soup_session),
-            SOUP_SESSION_MAX_CONNS_PER_HOST, uzbl.net.max_conns_host, NULL);
+    g_object_set(G_OBJECT(reuzbl.net.soup_session),
+            SOUP_SESSION_MAX_CONNS_PER_HOST, reuzbl.net.max_conns_host, NULL);
 }
 
 void
 cmd_http_debug() {
     soup_session_remove_feature
-        (uzbl.net.soup_session, SOUP_SESSION_FEATURE(uzbl.net.soup_logger));
+        (reuzbl.net.soup_session, SOUP_SESSION_FEATURE(reuzbl.net.soup_logger));
     /* do we leak if this doesn't get freed? why does it occasionally crash if freed? */
-    /*g_free(uzbl.net.soup_logger);*/
+    /*g_free(reuzbl.net.soup_logger);*/
 
-    uzbl.net.soup_logger = soup_logger_new(uzbl.behave.http_debug, -1);
-    soup_session_add_feature(uzbl.net.soup_session,
-            SOUP_SESSION_FEATURE(uzbl.net.soup_logger));
+    reuzbl.net.soup_logger = soup_logger_new(reuzbl.behave.http_debug, -1);
+    soup_session_add_feature(reuzbl.net.soup_session,
+            SOUP_SESSION_FEATURE(reuzbl.net.soup_logger));
 }
 
 WebKitWebSettings*
 view_settings() {
-    return webkit_web_view_get_settings(uzbl.gui.web_view);
+    return webkit_web_view_get_settings(reuzbl.gui.web_view);
 }
 
 void
 cmd_font_size() {
     WebKitWebSettings *ws = view_settings();
-    if (uzbl.behave.font_size > 0) {
-        g_object_set (G_OBJECT(ws), "default-font-size", uzbl.behave.font_size, NULL);
+    if (reuzbl.behave.font_size > 0) {
+        g_object_set (G_OBJECT(ws), "default-font-size", reuzbl.behave.font_size, NULL);
     }
 
-    if (uzbl.behave.monospace_size > 0) {
+    if (reuzbl.behave.monospace_size > 0) {
         g_object_set (G_OBJECT(ws), "default-monospace-font-size",
-                      uzbl.behave.monospace_size, NULL);
+                      reuzbl.behave.monospace_size, NULL);
     } else {
         g_object_set (G_OBJECT(ws), "default-monospace-font-size",
-                      uzbl.behave.font_size, NULL);
+                      reuzbl.behave.font_size, NULL);
     }
 }
 
 void
 cmd_default_font_family() {
     g_object_set (G_OBJECT(view_settings()), "default-font-family",
-            uzbl.behave.default_font_family, NULL);
+            reuzbl.behave.default_font_family, NULL);
 }
 
 void
 cmd_monospace_font_family() {
     g_object_set (G_OBJECT(view_settings()), "monospace-font-family",
-            uzbl.behave.monospace_font_family, NULL);
+            reuzbl.behave.monospace_font_family, NULL);
 }
 
 void
 cmd_sans_serif_font_family() {
     g_object_set (G_OBJECT(view_settings()), "sans_serif-font-family",
-            uzbl.behave.sans_serif_font_family, NULL);
+            reuzbl.behave.sans_serif_font_family, NULL);
 }
 
 void
 cmd_serif_font_family() {
     g_object_set (G_OBJECT(view_settings()), "serif-font-family",
-            uzbl.behave.serif_font_family, NULL);
+            reuzbl.behave.serif_font_family, NULL);
 }
 
 void
 cmd_cursive_font_family() {
     g_object_set (G_OBJECT(view_settings()), "cursive-font-family",
-            uzbl.behave.cursive_font_family, NULL);
+            reuzbl.behave.cursive_font_family, NULL);
 }
 
 void
 cmd_fantasy_font_family() {
     g_object_set (G_OBJECT(view_settings()), "fantasy-font-family",
-            uzbl.behave.fantasy_font_family, NULL);
+            reuzbl.behave.fantasy_font_family, NULL);
 }
 
 void
 cmd_zoom_level() {
-    webkit_web_view_set_zoom_level (uzbl.gui.web_view, uzbl.behave.zoom_level);
+    webkit_web_view_set_zoom_level (reuzbl.gui.web_view, reuzbl.behave.zoom_level);
 }
 
 void
 cmd_disable_plugins() {
     g_object_set (G_OBJECT(view_settings()), "enable-plugins",
-            !uzbl.behave.disable_plugins, NULL);
+            !reuzbl.behave.disable_plugins, NULL);
 }
 
 void
 cmd_disable_scripts() {
     g_object_set (G_OBJECT(view_settings()), "enable-scripts",
-            !uzbl.behave.disable_scripts, NULL);
+            !reuzbl.behave.disable_scripts, NULL);
 }
 
 void
 cmd_minimum_font_size() {
     g_object_set (G_OBJECT(view_settings()), "minimum-font-size",
-            uzbl.behave.minimum_font_size, NULL);
+            reuzbl.behave.minimum_font_size, NULL);
 }
 void
 cmd_autoload_img() {
     g_object_set (G_OBJECT(view_settings()), "auto-load-images",
-            uzbl.behave.autoload_img, NULL);
+            reuzbl.behave.autoload_img, NULL);
 }
 
 
 void
 cmd_autoshrink_img() {
     g_object_set (G_OBJECT(view_settings()), "auto-shrink-images",
-            uzbl.behave.autoshrink_img, NULL);
+            reuzbl.behave.autoshrink_img, NULL);
 }
 
 
 void
 cmd_enable_spellcheck() {
     g_object_set (G_OBJECT(view_settings()), "enable-spell-checking",
-            uzbl.behave.enable_spellcheck, NULL);
+            reuzbl.behave.enable_spellcheck, NULL);
 }
 
 void
 cmd_enable_private() {
     g_object_set (G_OBJECT(view_settings()), "enable-private-browsing",
-            uzbl.behave.enable_private, NULL);
+            reuzbl.behave.enable_private, NULL);
 }
 
 void
 cmd_print_bg() {
     g_object_set (G_OBJECT(view_settings()), "print-backgrounds",
-            uzbl.behave.print_bg, NULL);
+            reuzbl.behave.print_bg, NULL);
 }
 
 void
 cmd_style_uri() {
     g_object_set (G_OBJECT(view_settings()), "user-stylesheet-uri",
-            uzbl.behave.style_uri, NULL);
+            reuzbl.behave.style_uri, NULL);
 }
 
 void
 cmd_resizable_txt() {
     g_object_set (G_OBJECT(view_settings()), "resizable-text-areas",
-            uzbl.behave.resizable_txt, NULL);
+            reuzbl.behave.resizable_txt, NULL);
 }
 
 void
 cmd_default_encoding() {
     g_object_set (G_OBJECT(view_settings()), "default-encoding",
-            uzbl.behave.default_encoding, NULL);
+            reuzbl.behave.default_encoding, NULL);
 }
 
 void
 cmd_enforce_96dpi() {
     g_object_set (G_OBJECT(view_settings()), "enforce-96-dpi",
-            uzbl.behave.enforce_96dpi, NULL);
+            reuzbl.behave.enforce_96dpi, NULL);
 }
 
 void
 cmd_caret_browsing() {
     g_object_set (G_OBJECT(view_settings()), "enable-caret-browsing",
-            uzbl.behave.caret_browsing, NULL);
+            reuzbl.behave.caret_browsing, NULL);
 }
 
 // void
 // cmd_cookie_handler() {
-//     gchar **split = g_strsplit(uzbl.behave.cookie_handler, " ", 2);
+//     gchar **split = g_strsplit(reuzbl.behave.cookie_handler, " ", 2);
 //     /* pitfall: doesn't handle chain actions; must the sync_ action manually */
 //     if ((g_strcmp0(split[0], "sh") == 0) ||
 //         (g_strcmp0(split[0], "spawn") == 0)) {
-//         g_free (uzbl.behave.cookie_handler);
-//         uzbl.behave.cookie_handler =
+//         g_free (reuzbl.behave.cookie_handler);
+//         reuzbl.behave.cookie_handler =
 //             g_strdup_printf("sync_%s %s", split[0], split[1]);
 //     }
 //     g_strfreev (split);
@@ -1952,12 +1952,12 @@ cmd_caret_browsing() {
 
 // void
 // cmd_scheme_handler() {
-//     gchar **split = g_strsplit(uzbl.behave.scheme_handler, " ", 2);
+//     gchar **split = g_strsplit(reuzbl.behave.scheme_handler, " ", 2);
 //     /* pitfall: doesn't handle chain actions; must the sync_ action manually */
 //     if ((g_strcmp0(split[0], "sh") == 0) ||
 //         (g_strcmp0(split[0], "spawn") == 0)) {
-//         g_free (uzbl.behave.scheme_handler);
-//         uzbl.behave.scheme_handler =
+//         g_free (reuzbl.behave.scheme_handler);
+//         reuzbl.behave.scheme_handler =
 //             g_strdup_printf("sync_%s %s", split[0], split[1]);
 //     }
 //     g_strfreev (split);
@@ -1965,19 +1965,19 @@ cmd_caret_browsing() {
 
 void
 cmd_fifo_dir() {
-    uzbl.behave.fifo_dir = init_fifo(uzbl.behave.fifo_dir);
+    reuzbl.behave.fifo_dir = init_fifo(reuzbl.behave.fifo_dir);
 }
 
 void
 cmd_socket_dir() {
-    uzbl.behave.socket_dir = init_socket(uzbl.behave.socket_dir);
+    reuzbl.behave.socket_dir = init_socket(reuzbl.behave.socket_dir);
 }
 
 void
 cmd_inject_html() {
-    if(uzbl.behave.inject_html) {
-        webkit_web_view_load_html_string (uzbl.gui.web_view,
-                uzbl.behave.inject_html, NULL);
+    if(reuzbl.behave.inject_html) {
+        webkit_web_view_load_html_string (reuzbl.gui.web_view,
+                reuzbl.behave.inject_html, NULL);
     }
 }
 
@@ -1986,63 +1986,63 @@ cmd_modkey() {
     int i;
     char *buf;
 
-    buf = g_utf8_strup(uzbl.behave.modkey, -1);
-    uzbl.behave.modmask = 0;
+    buf = g_utf8_strup(reuzbl.behave.modkey, -1);
+    reuzbl.behave.modmask = 0;
 
-    if(uzbl.behave.modkey)
-        g_free(uzbl.behave.modkey);
-    uzbl.behave.modkey = buf;
+    if(reuzbl.behave.modkey)
+        g_free(reuzbl.behave.modkey);
+    reuzbl.behave.modkey = buf;
 
     for (i = 0; modkeys[i].key != NULL; i++) {
         if (g_strrstr(buf, modkeys[i].key))
-            uzbl.behave.modmask |= modkeys[i].mask;
+            reuzbl.behave.modmask |= modkeys[i].mask;
     }
 }
 
 void
 cmd_useragent() {
-    if (*uzbl.net.useragent == ' ') {
-        g_free (uzbl.net.useragent);
-        uzbl.net.useragent = NULL;
+    if (*reuzbl.net.useragent == ' ') {
+        g_free (reuzbl.net.useragent);
+        reuzbl.net.useragent = NULL;
     } else {
-        g_object_set(G_OBJECT(uzbl.net.soup_session), SOUP_SESSION_USER_AGENT,
-            uzbl.net.useragent, NULL);
+        g_object_set(G_OBJECT(reuzbl.net.soup_session), SOUP_SESSION_USER_AGENT,
+            reuzbl.net.useragent, NULL);
     }
 }
 
 void
 move_statusbar() {
-    if (!uzbl.gui.scrolled_win &&
-            !uzbl.gui.mainbar)
+    if (!reuzbl.gui.scrolled_win &&
+            !reuzbl.gui.mainbar)
         return;
 
-    gtk_widget_ref(uzbl.gui.scrolled_win);
-    gtk_widget_ref(uzbl.gui.mainbar);
-    gtk_container_remove(GTK_CONTAINER(uzbl.gui.vbox), uzbl.gui.scrolled_win);
-    gtk_container_remove(GTK_CONTAINER(uzbl.gui.vbox), uzbl.gui.mainbar);
+    gtk_widget_ref(reuzbl.gui.scrolled_win);
+    gtk_widget_ref(reuzbl.gui.mainbar);
+    gtk_container_remove(GTK_CONTAINER(reuzbl.gui.vbox), reuzbl.gui.scrolled_win);
+    gtk_container_remove(GTK_CONTAINER(reuzbl.gui.vbox), reuzbl.gui.mainbar);
 
-    if(uzbl.behave.status_top) {
-        gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.mainbar, FALSE, TRUE, 0);
-        gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.scrolled_win, TRUE, TRUE, 0);
+    if(reuzbl.behave.status_top) {
+        gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.mainbar, FALSE, TRUE, 0);
+        gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.scrolled_win, TRUE, TRUE, 0);
     }
     else {
-        gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.scrolled_win, TRUE, TRUE, 0);
-        gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.mainbar, FALSE, TRUE, 0);
+        gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.scrolled_win, TRUE, TRUE, 0);
+        gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.mainbar, FALSE, TRUE, 0);
     }
-    gtk_widget_unref(uzbl.gui.scrolled_win);
-    gtk_widget_unref(uzbl.gui.mainbar);
-    gtk_widget_grab_focus (GTK_WIDGET (uzbl.gui.web_view));
+    gtk_widget_unref(reuzbl.gui.scrolled_win);
+    gtk_widget_unref(reuzbl.gui.mainbar);
+    gtk_widget_grab_focus (GTK_WIDGET (reuzbl.gui.web_view));
     return;
 }
 
 gboolean
 set_var_value(const gchar *name, gchar *val) {
-    uzbl_cmdprop *c = NULL;
+    reuzbl_cmdprop *c = NULL;
     char *endp = NULL;
     char *buf = NULL;
     char *invalid_chars = "^°!\"§$%&/()=?'`'+~*'#-.:,;@<>| \\{}[]¹²³¼½";
 
-    if( (c = g_hash_table_lookup(uzbl.comm.proto_var, name)) ) {
+    if( (c = g_hash_table_lookup(reuzbl.comm.proto_var, name)) ) {
         if(!c->writeable) return FALSE;
 
         /* check for the variable type */
@@ -2065,13 +2065,13 @@ set_var_value(const gchar *name, gchar *val) {
     } else {
         /* check wether name violates our naming scheme */
         if(strpbrk(name, invalid_chars)) {
-            if (uzbl.state.verbose)
+            if (reuzbl.state.verbose)
                 printf("Invalid variable name\n");
             return FALSE;
         }
 
         /* custom vars */
-        c = malloc(sizeof(uzbl_cmdprop));
+        c = malloc(sizeof(reuzbl_cmdprop));
         c->type = TYPE_STR;
         c->dump = 0;
         c->func = NULL;
@@ -2079,7 +2079,7 @@ set_var_value(const gchar *name, gchar *val) {
         buf = expand(val, 0);
         c->ptr.s = malloc(sizeof(char *));
         *c->ptr.s = buf;
-        g_hash_table_insert(uzbl.comm.proto_var,
+        g_hash_table_insert(reuzbl.comm.proto_var,
                 g_strdup(name), (gpointer) c);
     }
     return TRUE;
@@ -2112,22 +2112,22 @@ parse_cmd_line(const char *ctl_line, GString *result) {
 
 /*@null@*/ gchar*
 build_stream_name(int type, const gchar* dir) {
-    State *s = &uzbl.state;
+    State *s = &reuzbl.state;
     gchar *str = NULL;
 
     if (type == FIFO) {
         str = g_strdup_printf
-            ("%s/uzbl_fifo_%s", dir, s->instance_name);
+            ("%s/reuzbl_fifo_%s", dir, s->instance_name);
     } else if (type == SOCKET) {
         str = g_strdup_printf
-            ("%s/uzbl_socket_%s", dir, s->instance_name);
+            ("%s/reuzbl_socket_%s", dir, s->instance_name);
     }
     return str;
 }
 
 gboolean
 control_fifo(GIOChannel *gio, GIOCondition condition) {
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf("triggered\n");
     gchar *ctl_line;
     GIOStatus ret;
@@ -2153,11 +2153,11 @@ control_fifo(GIOChannel *gio, GIOCondition condition) {
 
 /*@null@*/ gchar*
 init_fifo(gchar *dir) { /* return dir or, on error, free dir and return NULL */
-    if (uzbl.comm.fifo_path) { /* get rid of the old fifo if one exists */
-        if (unlink(uzbl.comm.fifo_path) == -1)
-            g_warning ("Fifo: Can't unlink old fifo at %s\n", uzbl.comm.fifo_path);
-        g_free(uzbl.comm.fifo_path);
-        uzbl.comm.fifo_path = NULL;
+    if (reuzbl.comm.fifo_path) { /* get rid of the old fifo if one exists */
+        if (unlink(reuzbl.comm.fifo_path) == -1)
+            g_warning ("Fifo: Can't unlink old fifo at %s\n", reuzbl.comm.fifo_path);
+        g_free(reuzbl.comm.fifo_path);
+        reuzbl.comm.fifo_path = NULL;
     }
 
     GIOChannel *chan = NULL;
@@ -2170,9 +2170,9 @@ init_fifo(gchar *dir) { /* return dir or, on error, free dir and return NULL */
             chan = g_io_channel_new_file(path, "r+", &error);
             if (chan) {
                 if (g_io_add_watch(chan, G_IO_IN|G_IO_HUP, (GIOFunc) control_fifo, NULL)) {
-                    if (uzbl.state.verbose)
+                    if (reuzbl.state.verbose)
                         printf ("init_fifo: created successfully as %s\n", path);
-                    uzbl.comm.fifo_path = path;
+                    reuzbl.comm.fifo_path = path;
                     return dir;
                 } else g_warning ("init_fifo: could not add watch on %s\n", path);
             } else g_warning ("init_fifo: can't open: %s\n", error->message);
@@ -2212,7 +2212,7 @@ create_stdin () {
         if (!g_io_add_watch(chan, G_IO_IN|G_IO_HUP, (GIOFunc) control_stdin, NULL)) {
             g_error ("Stdin: could not add watch\n");
         } else {
-            if (uzbl.state.verbose)
+            if (reuzbl.state.verbose)
                 printf ("Stdin: watch added successfully\n");
         }
     } else {
@@ -2277,11 +2277,11 @@ control_client_socket(GIOChannel *clientchan) {
 
 /*@null@*/ gchar*
 init_socket(gchar *dir) { /* return dir or, on error, free dir and return NULL */
-    if (uzbl.comm.socket_path) { /* remove an existing socket should one exist */
-        if (unlink(uzbl.comm.socket_path) == -1)
-            g_warning ("init_socket: couldn't unlink socket at %s\n", uzbl.comm.socket_path);
-        g_free(uzbl.comm.socket_path);
-        uzbl.comm.socket_path = NULL;
+    if (reuzbl.comm.socket_path) { /* remove an existing socket should one exist */
+        if (unlink(reuzbl.comm.socket_path) == -1)
+            g_warning ("init_socket: couldn't unlink socket at %s\n", reuzbl.comm.socket_path);
+        g_free(reuzbl.comm.socket_path);
+        reuzbl.comm.socket_path = NULL;
     }
 
     if (*dir == ' ') {
@@ -2302,13 +2302,13 @@ init_socket(gchar *dir) { /* return dir or, on error, free dir and return NULL *
 
     len = strlen (local.sun_path) + sizeof (local.sun_family);
     if (bind (sock, (struct sockaddr *) &local, len) != -1) {
-        if (uzbl.state.verbose)
+        if (reuzbl.state.verbose)
             printf ("init_socket: opened in %s\n", path);
         listen (sock, 5);
 
         if( (chan = g_io_channel_unix_new(sock)) ) {
             g_io_add_watch(chan, G_IO_IN|G_IO_HUP, (GIOFunc) control_socket, chan);
-            uzbl.comm.socket_path = path;
+            reuzbl.comm.socket_path = path;
             return dir;
         }
     } else g_warning ("init_socket: could not open in %s: %s\n", path, strerror(errno));
@@ -2326,60 +2326,60 @@ init_socket(gchar *dir) { /* return dir or, on error, free dir and return NULL *
 // this function may be called very early when the templates are not set (yet), hence the checks
 void
 update_title (void) {
-    Behaviour *b = &uzbl.behave;
+    Behaviour *b = &reuzbl.behave;
     gchar *parsed;
     GString* keycmd;
 
-    int len = strlen(uzbl.state.keycmd);
-    //gchar *prev = g_utf8_find_prev_char(uzbl.state.keycmd, uzbl.state.keycmd + uzbl.state.keycmd_pos);
-    if (uzbl.state.keycmd_pos < len) {
-            if (uzbl.state.keycmd_pos>0) {
-                keycmd = g_string_new_len(uzbl.state.keycmd + uzbl.state.keycmd_act_len, uzbl.state.keycmd_pos - uzbl.state.keycmd_act_len);
+    int len = strlen(reuzbl.state.keycmd);
+    //gchar *prev = g_utf8_find_prev_char(reuzbl.state.keycmd, reuzbl.state.keycmd + reuzbl.state.keycmd_pos);
+    if (reuzbl.state.keycmd_pos < len) {
+            if (reuzbl.state.keycmd_pos>0) {
+                keycmd = g_string_new_len(reuzbl.state.keycmd + reuzbl.state.keycmd_act_len, reuzbl.state.keycmd_pos - reuzbl.state.keycmd_act_len);
                 g_string_append(keycmd, "<span underline=\"single\">");
             } else
                 keycmd = g_string_new("<span underline=\"single\">");
 
-            g_string_append_c(keycmd, uzbl.state.keycmd[uzbl.state.keycmd_pos]);
+            g_string_append_c(keycmd, reuzbl.state.keycmd[reuzbl.state.keycmd_pos]);
             g_string_append(keycmd, "</span>");
-            if (uzbl.state.keycmd_pos < len - 1)
-                g_string_append(keycmd, &uzbl.state.keycmd[uzbl.state.keycmd_pos+1]);
-            uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
+            if (reuzbl.state.keycmd_pos < len - 1)
+                g_string_append(keycmd, &reuzbl.state.keycmd[reuzbl.state.keycmd_pos+1]);
+            reuzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
     } else {
-        if(uzbl.state.keycmd_act_len>=strlen(uzbl.state.keycmd))
+        if(reuzbl.state.keycmd_act_len>=strlen(reuzbl.state.keycmd))
             keycmd = g_string_new("");
         else
-            keycmd = g_string_new(uzbl.state.keycmd + uzbl.state.keycmd_act_len);
+            keycmd = g_string_new(reuzbl.state.keycmd + reuzbl.state.keycmd_act_len);
         g_string_append(keycmd, "<span underline=\"single\"> </span>");
-        uzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
+        reuzbl.state.keycmd_marked = g_string_free(keycmd, FALSE);
     }
 
 
     if (b->show_status) {
         if (b->title_format_short) {
             parsed = expand(b->title_format_short, 0);
-            if (uzbl.gui.main_window)
-                gtk_window_set_title (GTK_WINDOW(uzbl.gui.main_window), parsed);
+            if (reuzbl.gui.main_window)
+                gtk_window_set_title (GTK_WINDOW(reuzbl.gui.main_window), parsed);
             g_free(parsed);
         }
         if (b->status_format) {
             parsed = expand(b->status_format, 0);
-            gtk_label_set_markup(GTK_LABEL(uzbl.gui.mainbar_label), parsed);
+            gtk_label_set_markup(GTK_LABEL(reuzbl.gui.mainbar_label), parsed);
             g_free(parsed);
         }
         if (b->status_background) {
             GdkColor color;
             gdk_color_parse (b->status_background, &color);
             //labels and hboxes do not draw their own background. applying this on the vbox/main_window is ok as the statusbar is the only affected widget. (if not, we could also use GtkEventBox)
-            if (uzbl.gui.main_window)
-                gtk_widget_modify_bg (uzbl.gui.main_window, GTK_STATE_NORMAL, &color);
-            else if (uzbl.gui.plug)
-                gtk_widget_modify_bg (GTK_WIDGET(uzbl.gui.plug), GTK_STATE_NORMAL, &color);
+            if (reuzbl.gui.main_window)
+                gtk_widget_modify_bg (reuzbl.gui.main_window, GTK_STATE_NORMAL, &color);
+            else if (reuzbl.gui.plug)
+                gtk_widget_modify_bg (GTK_WIDGET(reuzbl.gui.plug), GTK_STATE_NORMAL, &color);
         }
     } else {
         if (b->title_format_long) {
             parsed = expand(b->title_format_long, 0);
-            if (uzbl.gui.main_window)
-                gtk_window_set_title (GTK_WINDOW(uzbl.gui.main_window), parsed);
+            if (reuzbl.gui.main_window)
+                gtk_window_set_title (GTK_WINDOW(reuzbl.gui.main_window), parsed);
             g_free(parsed);
         }
     }
@@ -2391,7 +2391,7 @@ configure_event_cb(GtkWidget* window, GdkEventConfigure* event) {
     (void) event;
 
     retrieve_geometry();
-    send_event(GEOMETRY_CHANGED, uzbl.gui.geometry);  
+    send_event(GEOMETRY_CHANGED, reuzbl.gui.geometry);  
     return FALSE;
 }
 
@@ -2403,7 +2403,7 @@ button_press_cb (GtkWidget* window, GdkEventButton* event) {
         Action *act;
         gchar* button = g_strdup_printf("%d", event->button);
         //printf("%d, %s\n", event->button, button);
-        if ((act = g_hash_table_lookup(uzbl.buttons, button))) {
+        if ((act = g_hash_table_lookup(reuzbl.buttons, button))) {
             gchar* param = expand(act->param, 0);
             //printf("%s, %s, %s\n", act->name, act->param, param);
 
@@ -2441,16 +2441,16 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
         return FALSE;
 
     /* turn off insert mode (if always_insert_mode is not used) */
-    if (uzbl.behave.insert_mode && (event->keyval == GDK_Escape)) {
-        set_insert_mode(uzbl.behave.always_insert_mode);
+    if (reuzbl.behave.insert_mode && (event->keyval == GDK_Escape)) {
+        set_insert_mode(reuzbl.behave.always_insert_mode);
         update_title();
-        uzbl.state.keycmd_pos = 0;
+        reuzbl.state.keycmd_pos = 0;
         return TRUE;
     }
 
-    if (uzbl.behave.insert_mode &&
-        ( ((event->state & uzbl.behave.modmask) != uzbl.behave.modmask) ||
-          (!uzbl.behave.modmask)
+    if (reuzbl.behave.insert_mode &&
+        ( ((event->state & reuzbl.behave.modmask) != reuzbl.behave.modmask) ||
+          (!reuzbl.behave.modmask)
         )
        )
         return FALSE;
@@ -2460,7 +2460,7 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     if (event->keyval == GDK_Escape) {
         clear_keycmd();
         update_title();
-        dehilight(uzbl.gui.web_view, NULL, NULL);
+        dehilight(reuzbl.gui.web_view, NULL, NULL);
         return TRUE;
     }
     // *KEY* INSERT
@@ -2473,10 +2473,10 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
             str = gtk_clipboard_wait_for_text (gtk_clipboard_get (GDK_SELECTION_CLIPBOARD));
         }
         if (str) {
-            GString* keycmd = g_string_new(uzbl.state.keycmd);
-            g_string_insert(keycmd, uzbl.state.keycmd_pos, str);
-            uzbl.state.keycmd = g_string_free(keycmd, FALSE);
-            uzbl.state.keycmd_pos += strlen(str);
+            GString* keycmd = g_string_new(reuzbl.state.keycmd);
+            g_string_insert(keycmd, reuzbl.state.keycmd_pos, str);
+            reuzbl.state.keycmd = g_string_free(keycmd, FALSE);
+            reuzbl.state.keycmd_pos += strlen(str);
             update_title ();
             g_free (str);
         }
@@ -2490,32 +2490,32 @@ key_press_cb (GtkWidget* window, GdkEventKey* event) {
     gboolean key_no_add = FALSE;
     // TODO: history
     // *KEY* LEFT
-    if (event->keyval == GDK_Left && uzbl.state.keycmd_pos>0) {
+    if (event->keyval == GDK_Left && reuzbl.state.keycmd_pos>0) {
     	key_no_add = TRUE;
-    	uzbl.state.keycmd_pos--;
+    	reuzbl.state.keycmd_pos--;
     }
     // *KEY* RIGHT
-    if (event->keyval == GDK_Right && uzbl.state.keycmd_pos<(int)strlen(uzbl.state.keycmd)) {
+    if (event->keyval == GDK_Right && reuzbl.state.keycmd_pos<(int)strlen(reuzbl.state.keycmd)) {
         key_no_add = TRUE;
-        uzbl.state.keycmd_pos++;
+        reuzbl.state.keycmd_pos++;
     }
     // *KEY* RETURN
     if ((event->keyval == GDK_Return) || (event->keyval == GDK_KP_Enter)) {
         key_ret = TRUE;
-        if(uzbl.state.keycmd_pos) uzbl.state.keycmd_pos--;
+        if(reuzbl.state.keycmd_pos) reuzbl.state.keycmd_pos--;
     }
     if (!key_ret && !key_no_add) { // heere
-        GString* keycmd = g_string_new(uzbl.state.keycmd);
-        g_string_insert(keycmd, uzbl.state.keycmd_pos, event->string);
-        uzbl.state.keycmd = g_string_free(keycmd, FALSE);
-        if(strlen(event->string)) uzbl.state.keycmd_pos++;
+        GString* keycmd = g_string_new(reuzbl.state.keycmd);
+        g_string_insert(keycmd, reuzbl.state.keycmd_pos, event->string);
+        reuzbl.state.keycmd = g_string_free(keycmd, FALSE);
+        if(strlen(event->string)) reuzbl.state.keycmd_pos++;
     }
-    if (uzbl.state.verbose)
-        printf("%d, %d, %d, '%s', '%s'\n", uzbl.state.keycmd_pos, (int)strlen(uzbl.state.keycmd), (int)strlen(event->string), event->string, uzbl.state.keycmd);
+    if (reuzbl.state.verbose)
+        printf("%d, %d, %d, '%s', '%s'\n", reuzbl.state.keycmd_pos, (int)strlen(reuzbl.state.keycmd), (int)strlen(event->string), event->string, reuzbl.state.keycmd);
 
     run_keycmd(key_ret);
     update_title();
-    if (key_ret) return (!uzbl.behave.insert_mode);
+    if (key_ret) return (!reuzbl.behave.insert_mode);
     return TRUE;
 }
 
@@ -2526,7 +2526,7 @@ run_keycmd(const gboolean key_ret) {
     Action *act;
     gchar *tmp;
 
-    if ((act = g_hash_table_lookup(uzbl.bindings, uzbl.state.keycmd))) {
+    if ((act = g_hash_table_lookup(reuzbl.bindings, reuzbl.state.keycmd))) {
         clear_keycmd();
         parse_command(act->name, act->param, NULL);
 
@@ -2540,17 +2540,17 @@ run_keycmd(const gboolean key_ret) {
     GString* short_keys = g_string_new ("");
     GString* short_keys_inc = g_string_new ("");
     guint i;
-    guint len = strlen(uzbl.state.keycmd);
-    if(uzbl.state.keycmd_screen_name) g_free(uzbl.state.keycmd_screen_name);
-    uzbl.state.keycmd_screen_name = NULL;
-    uzbl.state.keycmd_act_len = 0;
+    guint len = strlen(reuzbl.state.keycmd);
+    if(reuzbl.state.keycmd_screen_name) g_free(reuzbl.state.keycmd_screen_name);
+    reuzbl.state.keycmd_screen_name = NULL;
+    reuzbl.state.keycmd_act_len = 0;
     for (i=0; i<len; i++) {
-        g_string_append_c(short_keys, uzbl.state.keycmd[i]);
+        g_string_append_c(short_keys, reuzbl.state.keycmd[i]);
         g_string_assign(short_keys_inc, short_keys->str);
         g_string_append_c(short_keys, '_');
         g_string_append_c(short_keys_inc, '*');
 
-        if ((act = g_hash_table_lookup(uzbl.bindings, short_keys->str))) {
+        if ((act = g_hash_table_lookup(reuzbl.bindings, short_keys->str))) {
             if (key_ret) {
                 /* run normal cmds only if return was pressed */
                 exec_paramcmd(act, i);
@@ -2560,10 +2560,10 @@ run_keycmd(const gboolean key_ret) {
                 g_free(tmp);
                 break;
             } else {
-                uzbl.state.keycmd_screen_name = g_strdup(act->screen_name);
-                uzbl.state.keycmd_act_len = strlen(short_keys->str) - 1;
+                reuzbl.state.keycmd_screen_name = g_strdup(act->screen_name);
+                reuzbl.state.keycmd_act_len = strlen(short_keys->str) - 1;
             }
-        } else if ((act = g_hash_table_lookup(uzbl.bindings, short_keys_inc->str))) {
+        } else if ((act = g_hash_table_lookup(reuzbl.bindings, short_keys_inc->str))) {
             if (key_ret)  /* just quit the incremental command on return */
                 clear_keycmd();
             else {
@@ -2583,7 +2583,7 @@ run_keycmd(const gboolean key_ret) {
 
 void
 exec_paramcmd(const Action *act, const guint i) {
-    GString *parampart = g_string_new (uzbl.state.keycmd);
+    GString *parampart = g_string_new (reuzbl.state.keycmd);
     GString *actionname = g_string_new ("");
     GString *actionparam = g_string_new ("");
     g_string_erase (parampart, 0, i+1);
@@ -2600,7 +2600,7 @@ exec_paramcmd(const Action *act, const guint i) {
 
 void
 create_browser () {
-    GUI *g = &uzbl.gui;
+    GUI *g = &reuzbl.gui;
 
     g->web_view = WEBKIT_WEB_VIEW (webkit_web_view_new ());
 
@@ -2629,7 +2629,7 @@ create_browser () {
 
 GtkWidget*
 create_mainbar () {
-    GUI *g = &uzbl.gui;
+    GUI *g = &reuzbl.gui;
 
     g->mainbar = gtk_hbox_new (FALSE, 0);
 
@@ -2650,7 +2650,7 @@ GtkWidget*
 create_window () {
     GtkWidget* window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     gtk_window_set_default_size (GTK_WINDOW (window), 800, 600);
-    gtk_widget_set_name (window, "Uzbl browser");
+    gtk_widget_set_name (window, "reUzbl browser");
     g_signal_connect (G_OBJECT (window), "destroy", G_CALLBACK (destroy_cb), NULL);
     g_signal_connect (G_OBJECT (window), "key-press-event", G_CALLBACK (key_press_cb), NULL);
     g_signal_connect (G_OBJECT (window), "configure-event", G_CALLBACK (configure_event_cb), NULL);
@@ -2660,7 +2660,7 @@ create_window () {
 
 GtkPlug*
 create_plug () {
-    GtkPlug* plug = GTK_PLUG (gtk_plug_new (uzbl.state.socket_id));
+    GtkPlug* plug = GTK_PLUG (gtk_plug_new (reuzbl.state.socket_id));
     g_signal_connect (G_OBJECT (plug), "destroy", G_CALLBACK (destroy_cb), NULL);
     g_signal_connect (G_OBJECT (plug), "key-press-event", G_CALLBACK (key_press_cb), NULL);
 
@@ -2782,7 +2782,7 @@ add_binding (const gchar *key, const gchar *act) {
         return;
 
     //Debug:
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf ("Binding %-10s : %s\n", key, act);
 
     if(key) {
@@ -2802,9 +2802,9 @@ add_binding (const gchar *key, const gchar *act) {
 
     action = new_action(parts[0], parts[1], screen_name);
 
-    if (g_hash_table_remove (uzbl.bindings, new_key))
+    if (g_hash_table_remove (reuzbl.bindings, new_key))
         g_warning ("Overwriting existing binding for \"%s\"", new_key);
-    g_hash_table_replace(uzbl.bindings, g_strdup(new_key), action);
+    g_hash_table_replace(reuzbl.bindings, g_strdup(new_key), action);
     g_strfreev(parts);
     g_free(new_key);
 }
@@ -2820,7 +2820,7 @@ add_handler (const gchar *key, const gchar *act) {
         return;
 
     //Debug:
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf ("Handler %-10s : %s\n", key, act);
 
     if(key) {
@@ -2840,9 +2840,9 @@ add_handler (const gchar *key, const gchar *act) {
 
     action = new_action(parts[0], parts[1], screen_name);
 
-    if (g_hash_table_remove (uzbl.handlers, new_key))
+    if (g_hash_table_remove (reuzbl.handlers, new_key))
         g_warning ("Overwriting existing handler for \"%s\"", new_key);
-    g_hash_table_replace(uzbl.handlers, g_strdup(new_key), action);
+    g_hash_table_replace(reuzbl.handlers, g_strdup(new_key), action);
     g_strfreev(parts);
     g_free(new_key);
 }
@@ -2858,7 +2858,7 @@ add_button (const gchar *key, const gchar *act) {
         return;
 
     //Debug:
-    if (uzbl.state.verbose)
+    if (reuzbl.state.verbose)
         printf ("Button %-10s : %s\n", key, act);
 
     if(key) {
@@ -2878,9 +2878,9 @@ add_button (const gchar *key, const gchar *act) {
 
     action = new_action(parts[0], parts[1], screen_name);
 
-    if (g_hash_table_remove (uzbl.buttons, new_key))
+    if (g_hash_table_remove (reuzbl.buttons, new_key))
         g_warning ("Overwriting existing button for \"%s\"", new_key);
-    g_hash_table_replace(uzbl.buttons, g_strdup(new_key), action);
+    g_hash_table_replace(reuzbl.buttons, g_strdup(new_key), action);
     g_strfreev(parts);
     g_free(new_key);
 }
@@ -2940,8 +2940,8 @@ find_xdg_file (int xdg_type, const char* filename) {
 }
 void
 settings_init () {
-    State *s = &uzbl.state;
-    Network *n = &uzbl.net;
+    State *s = &reuzbl.state;
+    Network *n = &reuzbl.net;
     int i;
     for (i = 0; default_config[i].command != NULL; i++) {
         parse_cmd_line(default_config[i].command, NULL);
@@ -2953,7 +2953,7 @@ settings_init () {
     }
 
     else if (!s->config_file) {
-        s->config_file = find_xdg_file (0, "/uzbl/config");
+        s->config_file = find_xdg_file (0, "/reuzbl/config");
     }
 
     if (s->config_file) {
@@ -2968,7 +2968,7 @@ settings_init () {
         }
         g_array_free (lines, TRUE);
     } else {
-        if (uzbl.state.verbose)
+        if (reuzbl.state.verbose)
             printf ("No configuration file loaded.\n");
     }
 
@@ -2978,27 +2978,27 @@ settings_init () {
 void handle_cookies (SoupSession *session, SoupMessage *msg, gpointer user_data){
     (void) session;
     (void) user_data;
-    //if (!uzbl.behave.cookie_handler)
+    //if (!reuzbl.behave.cookie_handler)
     //     return;
 
     soup_message_add_header_handler(msg, "got-headers", "Set-Cookie", G_CALLBACK(save_cookies), NULL);
     GString *s = g_string_new ("");
     SoupURI * soup_uri = soup_message_get_uri(msg);
     g_string_printf(s, "GET '%s' '%s' '%s'", soup_uri->scheme, soup_uri->host, soup_uri->path);
-    // if(uzbl.behave.cookie_handler)
-    //     run_handler(uzbl.behave.cookie_handler, s->str);
+    // if(reuzbl.behave.cookie_handler)
+    //     run_handler(reuzbl.behave.cookie_handler, s->str);
     send_event(COOKIE, s->str);
 
-    // if(uzbl.behave.cookie_handler &&
-    if(g_hash_table_lookup(uzbl.handlers, "COOKIE") &&
-            uzbl.comm.sync_stdout && strcmp (uzbl.comm.sync_stdout, "") != 0) {
-        char *p = strchr(uzbl.comm.sync_stdout, '\n' );
+    // if(reuzbl.behave.cookie_handler &&
+    if(g_hash_table_lookup(reuzbl.handlers, "COOKIE") &&
+            reuzbl.comm.sync_stdout && strcmp (reuzbl.comm.sync_stdout, "") != 0) {
+        char *p = strchr(reuzbl.comm.sync_stdout, '\n' );
         if ( p != NULL ) *p = '\0';
-        soup_message_headers_replace (msg->request_headers, "Cookie", (const char *) uzbl.comm.sync_stdout);
+        soup_message_headers_replace (msg->request_headers, "Cookie", (const char *) reuzbl.comm.sync_stdout);
 
     }
-    if (uzbl.comm.sync_stdout)
-        uzbl.comm.sync_stdout = strfree(uzbl.comm.sync_stdout);
+    if (reuzbl.comm.sync_stdout)
+        reuzbl.comm.sync_stdout = strfree(reuzbl.comm.sync_stdout);
 
     g_string_free(s, TRUE);
 }
@@ -3013,7 +3013,7 @@ save_cookies (SoupMessage *msg, gpointer user_data){
         SoupURI * soup_uri = soup_message_get_uri(msg);
         GString *s = g_string_new ("");
         g_string_printf(s, "PUT '%s' '%s' '%s' '%s'", soup_uri->scheme, soup_uri->host, soup_uri->path, cookie);
-        //run_handler(uzbl.behave.cookie_handler, s->str);
+        //run_handler(reuzbl.behave.cookie_handler, s->str);
         send_event(COOKIE, s->str);
         g_free (cookie);
         g_string_free(s, TRUE);
@@ -3036,13 +3036,13 @@ create_inspector_cb (WebKitWebInspector* web_inspector, WebKitWebView* page, gpo
     (void) web_inspector;
     GtkWidget* scrolled_window;
     GtkWidget* new_web_view;
-    GUI *g = &uzbl.gui;
+    GUI *g = &reuzbl.gui;
 
     g->inspector_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_signal_connect(G_OBJECT(g->inspector_window), "delete-event",
             G_CALLBACK(hide_window_cb), NULL);
 
-    gtk_window_set_title(GTK_WINDOW(g->inspector_window), "Uzbl WebInspector");
+    gtk_window_set_title(GTK_WINDOW(g->inspector_window), "reUzbl WebInspector");
     gtk_window_set_default_size(GTK_WINDOW(g->inspector_window), 400, 300);
     gtk_widget_show(g->inspector_window);
 
@@ -3061,7 +3061,7 @@ create_inspector_cb (WebKitWebInspector* web_inspector, WebKitWebView* page, gpo
 gboolean
 inspector_show_window_cb (WebKitWebInspector* inspector){
     (void) inspector;
-    gtk_widget_show(uzbl.gui.inspector_window);
+    gtk_widget_show(reuzbl.gui.inspector_window);
 
     send_event(WEBINSPECTOR, "open");
     return TRUE;
@@ -3101,11 +3101,11 @@ inspector_inspector_destroyed_cb (WebKitWebInspector* inspector){
 
 void
 set_up_inspector() {
-    GUI *g = &uzbl.gui;
+    GUI *g = &reuzbl.gui;
     WebKitWebSettings *settings = view_settings();
     g_object_set(G_OBJECT(settings), "enable-developer-extras", TRUE, NULL);
 
-    uzbl.gui.inspector = webkit_web_view_get_inspector(uzbl.gui.web_view);
+    reuzbl.gui.inspector = webkit_web_view_get_inspector(reuzbl.gui.web_view);
     g_signal_connect (G_OBJECT (g->inspector), "inspect-web-view", G_CALLBACK (create_inspector_cb), NULL);
     g_signal_connect (G_OBJECT (g->inspector), "show-window", G_CALLBACK (inspector_show_window_cb), NULL);
     g_signal_connect (G_OBJECT (g->inspector), "close-window", G_CALLBACK (inspector_close_window_cb), NULL);
@@ -3119,7 +3119,7 @@ set_up_inspector() {
 void
 dump_var_hash(gpointer k, gpointer v, gpointer ud) {
     (void) ud;
-    uzbl_cmdprop *c = v;
+    reuzbl_cmdprop *c = v;
 
     if(!c->dump)
         return;
@@ -3143,10 +3143,10 @@ dump_key_hash(gpointer k, gpointer v, gpointer ud) {
 
 void
 dump_config() {
-    g_hash_table_foreach(uzbl.comm.proto_var, dump_var_hash, NULL);
-    g_hash_table_foreach(uzbl.bindings, dump_key_hash, NULL);
-    g_hash_table_foreach(uzbl.handlers, dump_key_hash, NULL);
-    g_hash_table_foreach(uzbl.buttons, dump_key_hash, NULL);
+    g_hash_table_foreach(reuzbl.comm.proto_var, dump_var_hash, NULL);
+    g_hash_table_foreach(reuzbl.bindings, dump_key_hash, NULL);
+    g_hash_table_foreach(reuzbl.handlers, dump_key_hash, NULL);
+    g_hash_table_foreach(reuzbl.buttons, dump_key_hash, NULL);
 }
 
 void
@@ -3154,14 +3154,14 @@ retrieve_geometry() {
     int w, h, x, y;
     GString *buf = g_string_new("");
 
-    gtk_window_get_size(GTK_WINDOW(uzbl.gui.main_window), &w, &h);
-    gtk_window_get_position(GTK_WINDOW(uzbl.gui.main_window), &x, &y);
+    gtk_window_get_size(GTK_WINDOW(reuzbl.gui.main_window), &w, &h);
+    gtk_window_get_position(GTK_WINDOW(reuzbl.gui.main_window), &x, &y);
 
     g_string_printf(buf, "%dx%d+%d+%d", w, h, x, y);
 
-    if(uzbl.gui.geometry)
-        g_free(uzbl.gui.geometry);
-    uzbl.gui.geometry = g_string_free(buf, FALSE);
+    if(reuzbl.gui.geometry)
+        g_free(reuzbl.gui.geometry);
+    reuzbl.gui.geometry = g_string_free(buf, FALSE);
 }
 
 /* set up gtk, gobject, variable defaults and other things that tests and other
@@ -3171,9 +3171,9 @@ initialize(int argc, char *argv[]) {
     // apparently this is deprected and can just let out
     // if (!g_thread_supported ())
     //     g_thread_init (NULL);
-    uzbl.state.executable_path = g_strdup(argv[0]);
-    uzbl.state.selected_url = NULL;
-    uzbl.state.searchtx = NULL;
+    reuzbl.state.executable_path = g_strdup(argv[0]);
+    reuzbl.state.selected_url = NULL;
+    reuzbl.state.searchtx = NULL;
 
     GOptionContext* context = g_option_context_new ("[ uri ] - load a uri by default");
     g_option_context_add_main_entries (context, entries, NULL);
@@ -3181,38 +3181,38 @@ initialize(int argc, char *argv[]) {
     g_option_context_parse (context, &argc, &argv, NULL);
     g_option_context_free(context);
 
-    if (uzbl.behave.print_version) {
+    if (reuzbl.behave.print_version) {
         printf("Commit: %s\n", COMMIT);
         exit(EXIT_SUCCESS);
     }
 
     /* initialize hash table */
-    uzbl.bindings = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
-    uzbl.handlers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
-    uzbl.buttons = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
+    reuzbl.bindings = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
+    reuzbl.handlers = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
+    reuzbl.buttons = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, free_action);
 
-    uzbl.net.soup_session = webkit_get_default_session();
-    uzbl.state.keycmd = g_strdup("");
-    uzbl.state.keycmd_pos = 0;
+    reuzbl.net.soup_session = webkit_get_default_session();
+    reuzbl.state.keycmd = g_strdup("");
+    reuzbl.state.keycmd_pos = 0;
 
     if(setup_signal(SIGTERM, catch_sigterm) == SIG_ERR)
-        fprintf(stderr, "uzbl: error hooking SIGTERM\n");
+        fprintf(stderr, "reuzbl: error hooking SIGTERM\n");
     if(setup_signal(SIGINT, catch_sigint) == SIG_ERR)
-        fprintf(stderr, "uzbl: error hooking SIGINT\n");
+        fprintf(stderr, "reuzbl: error hooking SIGINT\n");
 
-    uzbl.gui.sbar.progress_s = g_strdup("="); //TODO: move these to config.h
-    uzbl.gui.sbar.progress_u = g_strdup("·");
-    uzbl.gui.sbar.progress_w = 10;
+    reuzbl.gui.sbar.progress_s = g_strdup("="); //TODO: move these to config.h
+    reuzbl.gui.sbar.progress_u = g_strdup("·");
+    reuzbl.gui.sbar.progress_w = 10;
 
     /* default mode indicators */
-    uzbl.behave.insert_indicator = g_strdup("I");
-    uzbl.behave.cmd_indicator    = g_strdup("C");
+    reuzbl.behave.insert_indicator = g_strdup("I");
+    reuzbl.behave.cmd_indicator    = g_strdup("C");
 
-    uzbl.info.webkit_major = WEBKIT_MAJOR_VERSION;
-    uzbl.info.webkit_minor = WEBKIT_MINOR_VERSION;
-    uzbl.info.webkit_micro = WEBKIT_MICRO_VERSION;
-    uzbl.info.arch         = ARCH;
-    uzbl.info.commit       = COMMIT;
+    reuzbl.info.webkit_major = WEBKIT_MAJOR_VERSION;
+    reuzbl.info.webkit_minor = WEBKIT_MINOR_VERSION;
+    reuzbl.info.webkit_micro = WEBKIT_MICRO_VERSION;
+    reuzbl.info.arch         = ARCH;
+    reuzbl.info.commit       = COMMIT;
 
     commands_hash ();
     create_var_to_name_hash();
@@ -3220,7 +3220,7 @@ initialize(int argc, char *argv[]) {
     create_browser();
 }
 
-#ifndef UZBL_LIBRARY
+#ifndef REUZBL_LIBRARY
 /** -- MAIN -- **/
 int
 main (int argc, char* argv[]) {
@@ -3228,92 +3228,92 @@ main (int argc, char* argv[]) {
 
     gtk_init (&argc, &argv);
 
-    uzbl.gui.scrolled_win = gtk_scrolled_window_new (NULL, NULL);
+    reuzbl.gui.scrolled_win = gtk_scrolled_window_new (NULL, NULL);
     //main_window_ref = g_object_ref(scrolled_window);
-    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (uzbl.gui.scrolled_win),
+    gtk_scrolled_window_set_policy (GTK_SCROLLED_WINDOW (reuzbl.gui.scrolled_win),
         GTK_POLICY_NEVER, GTK_POLICY_NEVER); //todo: some sort of display of position/total length. like what emacs does
 
-    gtk_container_add (GTK_CONTAINER (uzbl.gui.scrolled_win),
-        GTK_WIDGET (uzbl.gui.web_view));
+    gtk_container_add (GTK_CONTAINER (reuzbl.gui.scrolled_win),
+        GTK_WIDGET (reuzbl.gui.web_view));
 
-    uzbl.gui.vbox = gtk_vbox_new (FALSE, 0);
+    reuzbl.gui.vbox = gtk_vbox_new (FALSE, 0);
 
     create_mainbar();
 
     /* initial packing */
-    gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.scrolled_win, TRUE, TRUE, 0);
-    gtk_box_pack_start (GTK_BOX (uzbl.gui.vbox), uzbl.gui.mainbar, FALSE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.scrolled_win, TRUE, TRUE, 0);
+    gtk_box_pack_start (GTK_BOX (reuzbl.gui.vbox), reuzbl.gui.mainbar, FALSE, TRUE, 0);
 
-    if (uzbl.state.socket_id) {
-        uzbl.gui.plug = create_plug ();
-        gtk_container_add (GTK_CONTAINER (uzbl.gui.plug), uzbl.gui.vbox);
-        gtk_widget_show_all (GTK_WIDGET (uzbl.gui.plug));
+    if (reuzbl.state.socket_id) {
+        reuzbl.gui.plug = create_plug ();
+        gtk_container_add (GTK_CONTAINER (reuzbl.gui.plug), reuzbl.gui.vbox);
+        gtk_widget_show_all (GTK_WIDGET (reuzbl.gui.plug));
     } else {
-        uzbl.gui.main_window = create_window ();
-        gtk_container_add (GTK_CONTAINER (uzbl.gui.main_window), uzbl.gui.vbox);
-        gtk_widget_show_all (uzbl.gui.main_window);
-        uzbl.xwin = GDK_WINDOW_XID (GTK_WIDGET (uzbl.gui.main_window)->window);
+        reuzbl.gui.main_window = create_window ();
+        gtk_container_add (GTK_CONTAINER (reuzbl.gui.main_window), reuzbl.gui.vbox);
+        gtk_widget_show_all (reuzbl.gui.main_window);
+        reuzbl.xwin = GDK_WINDOW_XID (GTK_WIDGET (reuzbl.gui.main_window)->window);
     }
 
-    if(!uzbl.state.instance_name) {
-        if(uzbl.xwin)
-            uzbl.state.instance_name = itos((int)uzbl.xwin);
+    if(!reuzbl.state.instance_name) {
+        if(reuzbl.xwin)
+            reuzbl.state.instance_name = itos((int)reuzbl.xwin);
         else
-            uzbl.state.instance_name = itos(getpid());
+            reuzbl.state.instance_name = itos(getpid());
     }
 
-    gtk_widget_grab_focus (GTK_WIDGET (uzbl.gui.web_view));
+    gtk_widget_grab_focus (GTK_WIDGET (reuzbl.gui.web_view));
 
-    if (uzbl.state.verbose) {
-        printf("Uzbl start location: %s\n", argv[0]);
-        if (uzbl.state.socket_id)
-            printf("plug_id %i\n", gtk_plug_get_id(uzbl.gui.plug));
+    if (reuzbl.state.verbose) {
+        printf("reUzbl start location: %s\n", argv[0]);
+        if (reuzbl.state.socket_id)
+            printf("plug_id %i\n", gtk_plug_get_id(reuzbl.gui.plug));
         else
-            printf("window_id %i\n",(int) uzbl.xwin);
+            printf("window_id %i\n",(int) reuzbl.xwin);
         printf("pid %i\n", getpid ());
-        printf("name: %s\n", uzbl.state.instance_name);
-        printf("commit: %s\n", uzbl.info.commit);
+        printf("name: %s\n", reuzbl.state.instance_name);
+        printf("commit: %s\n", reuzbl.info.commit);
     }
 
-    uzbl.gui.scbar_v = (GtkScrollbar*) gtk_vscrollbar_new (NULL);
-    uzbl.gui.bar_v = gtk_range_get_adjustment((GtkRange*) uzbl.gui.scbar_v);
-    uzbl.gui.scbar_h = (GtkScrollbar*) gtk_hscrollbar_new (NULL);
-    uzbl.gui.bar_h = gtk_range_get_adjustment((GtkRange*) uzbl.gui.scbar_h);
-    gtk_widget_set_scroll_adjustments ((GtkWidget*) uzbl.gui.web_view, uzbl.gui.bar_h, uzbl.gui.bar_v);
+    reuzbl.gui.scbar_v = (GtkScrollbar*) gtk_vscrollbar_new (NULL);
+    reuzbl.gui.bar_v = gtk_range_get_adjustment((GtkRange*) reuzbl.gui.scbar_v);
+    reuzbl.gui.scbar_h = (GtkScrollbar*) gtk_hscrollbar_new (NULL);
+    reuzbl.gui.bar_h = gtk_range_get_adjustment((GtkRange*) reuzbl.gui.scbar_h);
+    gtk_widget_set_scroll_adjustments ((GtkWidget*) reuzbl.gui.web_view, reuzbl.gui.bar_h, reuzbl.gui.bar_v);
 
-    /* Check uzbl is in window mode before getting/setting geometry */
-    if (uzbl.gui.main_window) {
-        if(uzbl.gui.geometry)
+    /* Check reuzbl is in window mode before getting/setting geometry */
+    if (reuzbl.gui.main_window) {
+        if(reuzbl.gui.geometry)
             cmd_set_geometry();
         else
             retrieve_geometry();
     }
 
-    gchar *uri_override = (uzbl.state.uri ? g_strdup(uzbl.state.uri) : NULL);
-    if (argc > 1 && !uzbl.state.uri)
+    gchar *uri_override = (reuzbl.state.uri ? g_strdup(reuzbl.state.uri) : NULL);
+    if (argc > 1 && !reuzbl.state.uri)
         uri_override = g_strdup(argv[1]);
-    gboolean verbose_override = uzbl.state.verbose;
+    gboolean verbose_override = reuzbl.state.verbose;
 
     settings_init ();
 
-    if (!uzbl.behave.always_insert_mode)
+    if (!reuzbl.behave.always_insert_mode)
       set_insert_mode(FALSE);
 
-    if (!uzbl.behave.show_status)
-        gtk_widget_hide(uzbl.gui.mainbar);
+    if (!reuzbl.behave.show_status)
+        gtk_widget_hide(reuzbl.gui.mainbar);
     else
         update_title();
 
     /* WebInspector */
     set_up_inspector();
 
-    if (verbose_override > uzbl.state.verbose)
-        uzbl.state.verbose = verbose_override;
+    if (verbose_override > reuzbl.state.verbose)
+        reuzbl.state.verbose = verbose_override;
 
     if (uri_override) {
         set_var_value("uri", uri_override);
         g_free(uri_override);
-    } else if (uzbl.state.uri)
+    } else if (reuzbl.state.uri)
         cmd_load_uri();
 
     gtk_main ();

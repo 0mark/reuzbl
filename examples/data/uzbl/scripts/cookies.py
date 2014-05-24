@@ -14,9 +14,9 @@ if __name__ == '__main__':
     set_cookie = sys.argv[12] if len(sys.argv)>12 else None
 
     if 'XDG_DATA_HOME' in os.environ.keys() and os.environ['XDG_DATA_HOME']:
-        f = os.path.join(os.environ['XDG_DATA_HOME'],'uzbl/cookies.txt')
+        f = os.path.join(os.environ['XDG_DATA_HOME'],'reuzbl/cookies.txt')
     else:
-        f = os.path.join(os.environ['HOME'],'.local/share/uzbl/cookies.txt')
+        f = os.path.join(os.environ['HOME'],'.local/share/reuzbl/cookies.txt')
     jar = cookielib.MozillaCookieJar(f)
 
     try:

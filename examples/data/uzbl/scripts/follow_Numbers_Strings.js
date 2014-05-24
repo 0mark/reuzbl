@@ -1,5 +1,5 @@
-var uzblid = 'uzbl_link_hint';
-var uzbldivid = uzblid + '_div_container';
+var reuzblid = 'reuzbl_link_hint';
+var reuzbldivid = reuzblid + '_div_container';
 var doc = document;
 var win = window;
 var links = document.links;
@@ -61,7 +61,7 @@ function elementInViewport(el) {
     return up < window.pageYOffset + window.innerHeight && left < window.pageXOffset + window.innerWidth && (up + height) > window.pageYOffset && (left + width) > window.pageXOffset;
 }
 function removeAllHints() {
-    var elements = doc.getElementById(uzbldivid);
+    var elements = doc.getElementById(reuzbldivid);
     if (elements) {
         elements.parentNode.removeChild(elements);
     }
@@ -69,7 +69,7 @@ function removeAllHints() {
 function generateHint(el, label) {
     var pos = elementPosition(el);
     var hint = doc.createElement('div');
-    hint.setAttribute('name', uzblid);
+    hint.setAttribute('name', reuzblid);
     hint.innerText = label;
     hint.style.display = 'inline';
     hint.style.backgroundColor = '#B9FF00';
@@ -147,7 +147,7 @@ function addFormElems() {
 }
 function reDrawHints(elems, len) {
     var hintdiv = doc.createElement('div');
-    hintdiv.setAttribute('id', uzbldivid);
+    hintdiv.setAttribute('id', reuzbldivid);
     hintdiv.style.opacity = '0.0';
     for (var i = 0; i < elems[0].length; i++) {
         var label = i + '';
@@ -173,7 +173,7 @@ function followLinks(follow) {
     var formelems = addFormElems();
     var elems = [linkelems[0].concat(formelems[0]), linkelems[1].concat(formelems[1])];
     var len = (elems[0].length + '').length;
-    var oldDiv = doc.getElementById(uzbldivid);
+    var oldDiv = doc.getElementById(reuzbldivid);
     var leftover = [[], []];
     if (linknr + 1 && s.length == len && linknr < elems[0].length && linknr >= 0) {
         clickElem(elems[0][linknr]);

@@ -8,7 +8,7 @@
   - code is currently a copy of bind code
   - naming scheme is bad
  - keycmd
-  - Fix input related todo (see uzbl.c)
+  - Fix input related todo (see reuzbl.c)
   - bind to key-and-dont-know-eventy-thing
     (for example dl thing hovered and shit)
 
@@ -19,6 +19,6 @@
  - cookie handler with a lot of fast
 
 - treetab
- - compile from uzbls make file
-  - better: compile with uzbls make file
+ - compile from reuzbls make file
+  - better: compile with reuzbls make file
  - rewrite in plain c

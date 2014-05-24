@@ -1,10 +1,10 @@
 #!/bin/bash
-killall uzbl; killall strace;
-killall -9 uzbl; killall -9 strace
+killall reuzbl; killall strace;
+killall -9 reuzbl; killall -9 strace
 
-rm -rf /tmp/uzbl_*
+rm -rf /tmp/reuzbl_*
 
-echo "Uzbl processes:"
-ps aux | grep uzbl | grep -v grep
-echo "Uzbl /tmp entries:"
-ls -alh /tmp/uzbl* 2>/dev/null
+echo "reUzbl processes:"
+ps aux | grep reuzbl | grep -v grep
+echo "reUzbl /tmp entries:"
+ls -alh /tmp/reuzbl* 2>/dev/null

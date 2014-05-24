@@ -8,34 +8,34 @@ LDFLAGS   := $(shell pkg-config --libs gtk+-2.0 webkit-1.0 libsoup-2.4 gthread-2
 
 PREFIX    ?= $(DESTDIR)/usr
 BINDIR    ?= $(PREFIX)/bin
-UZBLDATA  ?= $(PREFIX)/share/uzbl
-DOCSDIR   ?= $(PREFIX)/share/uzbl/docs
-EXMPLSDIR ?= $(PREFIX)/share/uzbl/examples
+REUZBLDATA  ?= $(PREFIX)/share/reuzbl
+DOCSDIR   ?= $(PREFIX)/share/reuzbl/docs
+EXMPLSDIR ?= $(PREFIX)/share/reuzbl/examples
 
-all: uzbl
+all: reuzbl
 
-uzbl: uzbl.c uzbl.h config.h
+reuzbl: reuzbl.c reuzbl.h config.h
 
 %: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(LIBS) -o $@ $<
 
-test: uzbl
-	./uzbl --uri http://www.uzbl.org
+test: reuzbl
+	./reuzbl --uri http://www.reuzbl.org
 
-test-config: uzbl
-	./uzbl --uri http://www.uzbl.org < examples/configs/sampleconfig-dev
+test-config: reuzbl
+	./reuzbl --uri http://www.reuzbl.org < examples/configs/sampleconfig-dev
 
-test-config-real: uzbl
-	./uzbl --uri http://www.uzbl.org < $(EXMPLSDIR)/configs/sampleconfig
+test-config-real: reuzbl
+	./reuzbl --uri http://www.reuzbl.org < $(EXMPLSDIR)/configs/sampleconfig
 
 clean:
-	rm -f uzbl
+	rm -f reuzbl
 
 install:
 	install -d $(BINDIR)
 	install -d $(DOCSDIR)
 	install -d $(EXMPLSDIR)
-	install -D -m755 uzbl $(BINDIR)/uzbl
+	install -D -m755 reuzbl $(BINDIR)/reuzbl
 	cp -ax docs/*   $(DOCSDIR)
 	cp -ax config.h $(DOCSDIR)
 	cp -ax examples/* $(EXMPLSDIR)
@@ -44,5 +44,5 @@ install:
 
 
 uninstall:
-	rm -rf $(BINDIR)/uzbl
-	rm -rf $(UZBLDATA)
+	rm -rf $(BINDIR)/reuzbl
+	rm -rf $(REUZBLDATA)

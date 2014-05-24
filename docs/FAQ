@@ -1,42 +1,42 @@
 FAQ
 ---
 
-### I just installed uzbl but it doesn't do much.  What now?
-Uzbl includes very limited default settings (statusbar settings, but no keybinds, history/download handlers etc.)
-Look at /usr/share/uzbl/docs/config.h to see the default settings.
-Have a look in /usr/share/uzbl/examples/configs to see what you can do.
+### I just installed reuzbl but it doesn't do much.  What now?
+reUzbl includes very limited default settings (statusbar settings, but no keybinds, history/download handlers etc.)
+Look at /usr/share/reuzbl/docs/config.h to see the default settings.
+Have a look in /usr/share/reuzbl/examples/configs to see what you can do.
 
-If you save a config as $XDG\_CONFIG\_HOME/uzbl/config it will be loaded automatically.
+If you save a config as $XDG\_CONFIG\_HOME/reuzbl/config it will be loaded automatically.
 Running with the `--verbose` flag on a command line can also be interesting.
 To get you started, try this:
-`XDG_DATA_HOME=/usr/share/uzbl/examples/data XDG_CONFIG_HOME=/usr/share/uzbl/examples/config uzbl`
+`XDG_DATA_HOME=/usr/share/reuzbl/examples/data XDG_CONFIG_HOME=/usr/share/reuzbl/examples/config reuzbl`
 It will temporarily override your $XDG\_CONFIG\_HOME and $XDG\_DATA\_HOME
-variables so you can try the sample stuff directly in /usr/share/uzbl/examples.
+variables so you can try the sample stuff directly in /usr/share/reuzbl/examples.
 If you like what you can do, you can copy the sample stuff into your ~ and edit to your liking.
 
 ### Why don't you just use a reasonable config by default?
-We actually did some attempts to make uzbl "usable by default" but in the
+We actually did some attempts to make reuzbl "usable by default" but in the
 end we had to conclude it cannot be done because of the following reasons:
 
  * We don't want to store anything "automagically" in the users home.
    Some people prefer different file/directory layouts, most of just want to
    control the files in $HOME themselves.
- * We considered the option of having a global '/etc/uzbl' which user
+ * We considered the option of having a global '/etc/reuzbl' which user
    specific ones could override but that would overcomplicate things.
  * We adhere to the [FHS](http://www.pathname.com/fhs/) (`man hier`), so
-   `uzbl -c /usr/share/...` is not an option.
+   `reuzbl -c /usr/share/...` is not an option.
 
-So even though we would like to make uzbl more usable by default, we think
+So even though we would like to make reuzbl more usable by default, we think
 there is no sensible way to do it.  Maybe downstream packagers could provide
-a note that users could copy the examples from /usr/share/uzbl/examples into
+a note that users could copy the examples from /usr/share/reuzbl/examples into
 their homes, because really, that's all that is needed if you want it to
 just "work" without controlling how yourself. (unless you have no
 xdg variables set, in which case you should be smart enough to edit the sample
 config yourself).
 
 ### Where is the location bar? How do I change the URL ?
-Uzbl has no location bar.  All changes to the uri (editing of current uri, typing new uri, loading of uri from bookmarks/history/...) happens *outside* of uzbl.
-Have a look at the sample scripts in /usr/share/uzbl/examples.  Most of our examples use dmenu which is a nifty little tool to pick an item from a list of items (very
+reUzbl has no location bar.  All changes to the uri (editing of current uri, typing new uri, loading of uri from bookmarks/history/...) happens *outside* of reuzbl.
+Have a look at the sample scripts in /usr/share/reuzbl/examples.  Most of our examples use dmenu which is a nifty little tool to pick an item from a list of items (very
 useful with history/bookmarks) with a limited set of keystrokes.  see man dmenu.
 You can also use it to make edits to a uri (press tab to load it into the
 search field) or type a url from scratch, though dmenu
@@ -46,20 +46,20 @@ And you can always make keybinds to load the current uri in the command field, p
 clipboard etc.
 
 ### Where are the widgets (forward, back,.. button etc)
-Uzbl's layout only contains what you really need to see.  we only have a statusbar, which even can also be disabled.  There are no buttons, but we do
+reUzbl's layout only contains what you really need to see.  we only have a statusbar, which even can also be disabled.  There are no buttons, but we do
 have lots of keybinding possibilities.
 
 ### No tabs? Why do you need a new window for each page?
-We stick to "one page per uzbl instance" because that's a simple, clean and flexible method.  We believe "multiple instances management" is something that must
-be handled outside of uzbl by a separate/different program.  Here are some solutions:
+We stick to "one page per reuzbl instance" because that's a simple, clean and flexible method.  We believe "multiple instances management" is something that must
+be handled outside of reuzbl by a separate/different program.  Here are some solutions:
 
  * Many window managers can (and should) handle this by default.  Xmonads tabbed layout, Wmii's stacked layout, fluxbox or kwin tabs and so on.
- * Uzbl supports acting as a GtkPlug to plug into GtkSockets (Xembed) so you can embed uzbl instances in other Gtk applications.
-   This allows several implementatinos, a popular one is [uzbl_tabbed.py](http://www.uzbl.org/wiki/uzbl_tabbed)
+ * reUzbl supports acting as a GtkPlug to plug into GtkSockets (Xembed) so you can embed reuzbl instances in other Gtk applications.
+   This allows several implementatinos, a popular one is [reuzbl_tabbed.py](http://www.reuzbl.org/wiki/reuzbl_tabbed)
  * If you want highest customizablity, you need the 3rd option:
    You can also write a custom script.  The only thing you need to do is focus/maximize the instance you want,
    keep the others out of sight and use tools like dmenu and wmctrl to switch instances.
-   This allows you to use application-specific properties (such as uzbl tag, name etc).
+   This allows you to use application-specific properties (such as reuzbl tag, name etc).
    For more information about this approach, see docs/multiple-instances-management.
    (If you want to work on such script, let us know and we might include it along with the other sample scripts)
 
@@ -71,7 +71,7 @@ You have to look at the bigger picture.  In fact, we do support all these things
  * Your script receives properties such as the current url, window title etc.
  * You can then call a tool such as zenity to prompt for any more information you may want to specify (tags,...)
  * You have the freedom to store the bookmarks in whichever format you want. (plaintext, sqlite, any database, on a remote system, in version control, ...)
- * To load a bookmark, you trigger another script which invokes a tool such as dmenu to let you pick a bookmark.  Your script can send the command to load the url to uzbl very easily by using the socket or fifo interface.
+ * To load a bookmark, you trigger another script which invokes a tool such as dmenu to let you pick a bookmark.  Your script can send the command to load the url to reuzbl very easily by using the socket or fifo interface.
  * To manage your bookmarks, you can use whatever you want, depending on how you store them (simple text editor, database interface, ... )
 
 These ideas are something we want to consistently apply throughout the entire application.  (Even more, throughout our entire desktop environment)
@@ -84,7 +84,7 @@ In fact, we actually ship various sample scripts and some sample configs that ma
 ### Why can't I type anything in forms?  How does the keybinding work?
 You are in command mode, not in insert mode.
 
-* command mode: you can trigger actions inside uzbl with minimum amount of keypresses (eg 'b' to go back, 'ZZ' to quit etc)  (see config examples), but not to type actual text into forms, because all your keypresses are interpreted.
+* command mode: you can trigger actions inside reuzbl with minimum amount of keypresses (eg 'b' to go back, 'ZZ' to quit etc)  (see config examples), but not to type actual text into forms, because all your keypresses are interpreted.
 * insert mode: after going into insert mode (by default this is the 'i' binding from inside command mode), your keypresses are not interpreted but passed on, so you can enter text into forms.  Press Esc to go out of insert mode.
 
 The above method is called "modal" as inspired on VI.  If you don't like
@@ -100,7 +100,7 @@ either, so by tuning the modkey and always\_insert\_mode settings you can pick
 whichever method you like, or both at the same time (command mode, insert mode, and the modkey to perform actions while in insert mode)
 
 ### Why do you depend on gtk?
-Uzbl itself doesn't use much gtk stuff (only the statusbar) so we could do without gtk.  But Webkit needs a widget toolkit to create widgets (think javascript popups, html forms etc).
+reUzbl itself doesn't use much gtk stuff (only the statusbar) so we could do without gtk.  But Webkit needs a widget toolkit to create widgets (think javascript popups, html forms etc).
 Officially, it also supports QT and wxwigdets.  There are also some unofficial patchsets floating on the interwebs for the EFL and FLTK toolkits.  One could argue we don't need no popups or fancy form widgets and you could have a point, but
 we prefer being reasonably assured that things work as they are supposed to rather then using some obscure patchset which may be incomplete, broken and/or badly designed, or wasting time ourselves in what is not our core objective.
 Note that we do *not* depend on any Gnome libraries such as gconf.  _That_ would be something worth complaining about :)
@@ -121,7 +121,7 @@ You'll notice our example scripts and configs use variables such as `$XDG_CONFIG
 Most of us really like the [xdg basedir spec](http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html)
 so our example material folows it.  Basically it helps you keeping a clean `$HOME` and it separates config, data and cache.
 If these variables are not defined on your system, it could be that you need to install an xdg package.
-If you don't like this, no one is stopping you from changing the scripts and configs to point to a single `$HOME/.uzbl` directory or whatever you want.
+If you don't like this, no one is stopping you from changing the scripts and configs to point to a single `$HOME/.reuzbl` directory or whatever you want.
 
 
 ### Does the world really need another browser?

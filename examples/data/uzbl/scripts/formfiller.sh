@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# simple html form (eg for logins) filler (and manager) for uzbl.
+# simple html form (eg for logins) filler (and manager) for reuzbl.
 # uses settings files like: $keydir/<domain>
 # files contain lines like: <fieldname>: <value>
 
@@ -12,7 +12,7 @@
 
 # something else (or empty): if file not available: new, otherwise load.
 
-keydir=${XDG_DATA_HOME:-$HOME/.local/share}/uzbl/forms
+keydir=${XDG_DATA_HOME:-$HOME/.local/share}/reuzbl/forms
 [ -d "`dirname $keydir`" ] || exit 1
 [ -d "$keydir" ] || mkdir "$keydir"
 
@@ -45,7 +45,7 @@ domain=$(echo $url | sed -re 's|(http\|https)+://([A-Za-z0-9\.]+)/.*|\2|')
 
 
 #regex='s|.*<input.*?name="([[:graph:]]+)".*?/>.*|\1: |p' # sscj's first version, does not work on http://wiki.archlinux.org/index.php?title=Special:UserLogin&returnto=Main_Page
- regex='s|.*<input.*?name="([^"]*)".*|\1: |p' #works on arch wiki, but not on http://lists.uzbl.org/listinfo.cgi/uzbl-dev-uzbl.org TODO: improve
+ regex='s|.*<input.*?name="([^"]*)".*|\1: |p' #works on arch wiki, but not on http://lists.reuzbl.org/listinfo.cgi/reuzbl-dev-reuzbl.org TODO: improve
 
 
 if [ "$action" = 'load' ]

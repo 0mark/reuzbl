@@ -9,10 +9,10 @@ set -n;
 # This is one textfile with entries like this:
 # kb.mozillazine.org	FALSE	/	FALSE	1146030396	wikiUserID	16993
 # domain alow-read-other-subdomains path http-required expiration name value
-# you probably want your cookies config file in your $XDG_CONFIG_HOME ( eg $HOME/.config/uzbl/cookies)
-# Note. in uzbl there is no strict definition on what a session is.  it's YOUR job to clear cookies marked as end_session if you want to keep cookies only valid during a "session"
+# you probably want your cookies config file in your $XDG_CONFIG_HOME ( eg $HOME/.config/reuzbl/cookies)
+# Note. in reuzbl there is no strict definition on what a session is.  it's YOUR job to clear cookies marked as end_session if you want to keep cookies only valid during a "session"
 # MAYBE TODO: allow user to edit cookie before saving. this cannot be done with zenity :(
-# TODO: different cookie paths per config (eg per group of uzbl instances)
+# TODO: different cookie paths per config (eg per group of reuzbl instances)
 
 # TODO: correct implementation.
 # see http://curl.haxx.se/rfc/cookie_spec.html
@@ -26,10 +26,10 @@ set -n;
 # http://kb.mozillazine.org/Cookies.txt
 # don't always append cookies, sometimes we need to overwrite
 
-cookie_config=${XDG_CONFIG_HOME:-${HOME}/.config}/uzbl/cookies
+cookie_config=${XDG_CONFIG_HOME:-${HOME}/.config}/reuzbl/cookies
 [ "x$cookie_config" = x ] && exit 1
-[ -d "${XDG_DATA_HOME:-${HOME}/.local/share}/uzbl/" ] &&\
-cookie_data=${XDG_DATA_HOME:-${HOME}/.local/share}/uzbl/cookies.txt || exit 1
+[ -d "${XDG_DATA_HOME:-${HOME}/.local/share}/reuzbl/" ] &&\
+cookie_data=${XDG_DATA_HOME:-${HOME}/.local/share}/reuzbl/cookies.txt || exit 1
 
 notifier=
 #notifier=notify-send
@@ -148,7 +148,7 @@ then
 	[ "x$action" = xGET ] && fetch_cookie && echo "$cookie"
 elif ! match DENY $host
 then
-	[ "x$action" = xPUT ] &&                 cookie=`zenity --entry --title 'Uzbl Cookie handler' --text "Accept this cookie from $host ?" --entry-text="$cookie"` && store_cookie $host
-	[ "x$action" = xGET ] && fetch_cookie && cookie=`zenity --entry --title 'Uzbl Cookie handler' --text "Submit this cookie to $host ?"   --entry-text="$cookie"` && echo $cookie
+	[ "x$action" = xPUT ] &&                 cookie=`zenity --entry --title 'reUzbl Cookie handler' --text "Accept this cookie from $host ?" --entry-text="$cookie"` && store_cookie $host
+	[ "x$action" = xGET ] && fetch_cookie && cookie=`zenity --entry --title 'reUzbl Cookie handler' --text "Submit this cookie to $host ?"   --entry-text="$cookie"` && echo $cookie
 fi
 exit 0

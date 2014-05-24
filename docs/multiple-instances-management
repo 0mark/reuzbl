@@ -1,11 +1,11 @@
-"multiple instance management" or: how to manage multiple open pages/instances of uzbl.
+"multiple instance management" or: how to manage multiple open pages/instances of reuzbl.
 
-The way we do MIM in uzbl will be better then what you can do with tabs in other programs.
+The way we do MIM in reuzbl will be better then what you can do with tabs in other programs.
 Tabs are just one specific gui implementation which aids in some aspects of "multiple instances management" but not all.
 We can get the same and even better features functionality wise, without limiting ourselves to the particular implementation that tabs are.
 We use a "use-case"/tasks driven approach, unlike tabs which is a "lets do this, and then see how we can use it" approach.
 
-The approach we are implementing in uzbl is like this:
+The approach we are implementing in reuzbl is like this:
 - 1 page per instance.
 - ability to spawn new windows ("open in new window"), keybinds for having the new window focused or not.
 - each instance keeps track of it's page state (loading, loaded but not seen, loaded and seen)
@@ -36,6 +36,6 @@ Here's an overview what do tabs really do, whether we really need it, and if can
 Conclusion
 ---------
 I think our method is better then tabs.  Bonus advantages:
-* single uzbl instances are simple to implement, no added clutter.
+* single reuzbl instances are simple to implement, no added clutter.
 * one crashing instance does not affect the rest
-* all this stuff is implemented outside of uzbl.  You can even decide to not use it and you won't even know the feature was ever there.  (though i guess most people will want this).
+* all this stuff is implemented outside of reuzbl.  You can even decide to not use it and you won't even know the feature was ever there.  (though i guess most people will want this).

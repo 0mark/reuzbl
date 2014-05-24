@@ -22,17 +22,17 @@
 #include <fcntl.h>
 #include <signal.h>
 
-#include <uzbl.h>
+#include <reuzbl.h>
 #include <config.h>
 
-extern Uzbl uzbl;
+extern reUzbl reuzbl;
 
 extern gchar* expand(char*, guint);
 extern void make_var_to_name_hash(void);
 
 void
 test_keycmd (void) {
-    uzbl.state.keycmd = "gg winslow";
+    reuzbl.state.keycmd = "gg winslow";
     g_assert_cmpstr(expand("@keycmd", 0), ==, "gg winslow");
 }
 
@@ -40,20 +40,20 @@ void
 test_uri (void) {
     g_assert_cmpstr(expand("@uri", 0), ==, "");
 
-    uzbl.state.uri = g_strdup("http://www.uzbl.org/");
-    g_assert_cmpstr(expand("@uri", 0), ==, uzbl.state.uri);
-    g_free(uzbl.state.uri);
+    reuzbl.state.uri = g_strdup("http://www.reuzbl.org/");
+    g_assert_cmpstr(expand("@uri", 0), ==, reuzbl.state.uri);
+    g_free(reuzbl.state.uri);
 }
 
 void
 test_LOAD_PROGRESS (void) {
-    uzbl.gui.sbar.load_progress = 50;
+    reuzbl.gui.sbar.load_progress = 50;
     g_assert_cmpstr(expand("@LOAD_PROGRESS", 0), ==, "50");
 }
 
 void
 test_LOAD_PROGRESSBAR (void) {
-    uzbl.gui.sbar.progress_w = 4;
+    reuzbl.gui.sbar.progress_w = 4;
     progress_change_cb(NULL, 75, NULL);
 
     g_assert_cmpstr(expand("@LOAD_PROGRESSBAR", 0), ==, "===·");
@@ -61,19 +61,19 @@ test_LOAD_PROGRESSBAR (void) {
 
 void
 test_TITLE (void) {
-    uzbl.gui.main_title = "Lorem Ipsum";
+    reuzbl.gui.main_title = "Lorem Ipsum";
     g_assert_cmpstr(expand("@TITLE", 0), ==, "Lorem Ipsum");
 }
 
 void
 test_SELECTED_URI (void) {
-    uzbl.state.selected_url = "http://example.org/";
+    reuzbl.state.selected_url = "http://example.org/";
     g_assert_cmpstr(expand("@SELECTED_URI", 0), ==, "http://example.org/");
 }
 
 void
 test_NAME (void) {
-    uzbl.state.instance_name = "testing";
+    reuzbl.state.instance_name = "testing";
     g_assert_cmpstr(expand("@NAME", 0), ==, "testing");
 }
 
@@ -88,7 +88,7 @@ test_MODE (void) {
 
 void
 test_status_message (void) {
-    uzbl.gui.sbar.msg = "Hello from frosty Edmonton!";
+    reuzbl.gui.sbar.msg = "Hello from frosty Edmonton!";
     g_assert_cmpstr(expand("@status_message", 0), ==, "Hello from frosty Edmonton!");
 }
 
@@ -105,18 +105,18 @@ test_WEBKIT_VERSION (void) {
 }
 
 void
-test_ARCH_UZBL (void) {
-    g_assert_cmpstr(expand("@ARCH_UZBL", 0), ==, ARCH);
+test_ARCH_REUZBL (void) {
+    g_assert_cmpstr(expand("@ARCH_REUZBL", 0), ==, ARCH);
 }
 
 void
 test_COMMIT (void) {
-    g_assert_cmpstr(expand("@COMMIT", 0), ==, uzbl.info.commit);
+    g_assert_cmpstr(expand("@COMMIT", 0), ==, reuzbl.info.commit);
 }
 
 void
 test_cmd_useragent_simple (void) {
-    GString* expected = g_string_new("Uzbl (Webkit ");
+    GString* expected = g_string_new("reUzbl (Webkit ");
     g_string_append(expected, itos(WEBKIT_MAJOR_VERSION));
     g_string_append(expected, ".");
     g_string_append(expected, itos(WEBKIT_MINOR_VERSION));
@@ -124,13 +124,13 @@ test_cmd_useragent_simple (void) {
     g_string_append(expected, itos(WEBKIT_MICRO_VERSION));
     g_string_append(expected, ")");
 
-    set_var_value("useragent", "Uzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO)");
-    g_assert_cmpstr(uzbl.net.useragent, ==, g_string_free(expected, FALSE));
+    set_var_value("useragent", "reUzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO)");
+    g_assert_cmpstr(reuzbl.net.useragent, ==, g_string_free(expected, FALSE));
 }
 
 void
 test_cmd_useragent_full (void) {
-    GString* expected = g_string_new("Uzbl (Webkit ");
+    GString* expected = g_string_new("reUzbl (Webkit ");
     g_string_append(expected, itos(WEBKIT_MAJOR_VERSION));
     g_string_append(expected, ".");
     g_string_append(expected, itos(WEBKIT_MINOR_VERSION));
@@ -154,18 +154,18 @@ test_cmd_useragent_full (void) {
     g_string_append(expected, " [");
     g_string_append(expected, ARCH);
     g_string_append(expected, "]) (Commit ");
-    g_string_append(expected, uzbl.info.commit);
+    g_string_append(expected, reuzbl.info.commit);
     g_string_append(expected, ")");
 
-    set_var_value("useragent", "Uzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO) (@(uname -s)@ @(uname -n)@ @(uname -r)@ @(uname -v)@ @(uname -m)@ [@ARCH_UZBL]) (Commit @COMMIT)");
-    g_assert_cmpstr(uzbl.net.useragent, ==, g_string_free(expected, FALSE));
+    set_var_value("useragent", "reUzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO) (@(uname -s)@ @(uname -n)@ @(uname -r)@ @(uname -v)@ @(uname -m)@ [@ARCH_REUZBL]) (Commit @COMMIT)");
+    g_assert_cmpstr(reuzbl.net.useragent, ==, g_string_free(expected, FALSE));
 }
 
 void
 test_escape_markup (void) {
     /* simple expansion */
-    uzbl.state.uri = g_strdup("<&>");
-    g_assert_cmpstr(expand("@uri", 0), ==, uzbl.state.uri);
+    reuzbl.state.uri = g_strdup("<&>");
+    g_assert_cmpstr(expand("@uri", 0), ==, reuzbl.state.uri);
     g_assert_cmpstr(expand("@[@uri]@", 0), ==, "&lt;&amp;&gt;");
 
     /* shell expansion */
@@ -176,7 +176,7 @@ test_escape_markup (void) {
     g_assert_cmpstr(expand("@<'<&>'>@", 0), ==, "<&>");
     g_assert_cmpstr(expand("@[@<'<&>'>@]@", 0), ==, "&lt;&amp;&gt;");
 
-    g_free(uzbl.state.uri);
+    g_free(reuzbl.state.uri);
 }
 
 void
@@ -196,7 +196,7 @@ test_escape_expansion (void) {
 
 void
 test_nested (void) {
-    uzbl.gui.sbar.msg = "xxx";
+    reuzbl.gui.sbar.msg = "xxx";
     g_assert_cmpstr(expand("@<\"..@status_message..\">@", 0), ==, "..xxx..");
     g_assert_cmpstr(expand("@<\"..\\@status_message..\">@", 0), ==, "..@status_message..");
 
@@ -219,7 +219,7 @@ main (int argc, char *argv[]) {
     g_test_add_func("/test-expand/@NAME", test_NAME);
     g_test_add_func("/test-expand/@MODE", test_MODE);
     g_test_add_func("/test-expand/@WEBKIT_*", test_WEBKIT_VERSION);
-    g_test_add_func("/test-expand/@ARCH_UZBL", test_ARCH_UZBL);
+    g_test_add_func("/test-expand/@ARCH_REUZBL", test_ARCH_REUZBL);
     g_test_add_func("/test-expand/@COMMIT", test_COMMIT);
 
     g_test_add_func("/test-expand/cmd_useragent_simple", test_cmd_useragent_simple);

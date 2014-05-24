@@ -166,7 +166,7 @@ typedef struct {
     gchar *commit;
 } Info;
 
-/* main uzbl data structure */
+/* main reuzbl data structure */
 typedef struct {
     GUI           gui;
     State         state;
@@ -182,7 +182,7 @@ typedef struct {
     GHashTable* bindings;
     GHashTable* handlers;
     GHashTable* buttons;
-} Uzbl;
+} reUzbl;
 
 
 typedef struct {
@@ -339,7 +339,7 @@ void
 keycmd_bs (WebKitWebView *page, GArray *argv, GString *result);
 
 void
-close_uzbl (WebKitWebView *page, GArray *argv, GString *result);
+close_reuzbl (WebKitWebView *page, GArray *argv, GString *result);
 
 gboolean
 run_command(const gchar *command, const guint npre,

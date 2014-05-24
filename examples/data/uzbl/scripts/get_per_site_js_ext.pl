@@ -29,7 +29,7 @@ sub Socket {
 }
 
 my $query = Socket($ARGV[4]);
-my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/uzbl/per-site';
+my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/reuzbl/per-site';
 my $base = my $host = $ARGV[5];
 $base =~ s/\/[^\/]*$//g;
 $host =~ s/([^:]+:\/\/)([^.]+\.)*([^.]+\.[^\/]+\/).*/\1*\3/g;

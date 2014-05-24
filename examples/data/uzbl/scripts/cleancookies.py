@@ -33,16 +33,16 @@ def usage():
 	print
 	print "If -w or -b option is specified, cleancookies treats each line of FILE as regular expression that cookie domain is matched against."
 	print
-	print "COOKIES file (or stabndard input) should be cookies.txt file as used by mozilla and uzbl-cookie-daemon."
+	print "COOKIES file (or stabndard input) should be cookies.txt file as used by mozilla and reuzbl-cookie-daemon."
 	print
 	print "EXAMPLE: add following script to your ~/.xsession, or register it in crontab:"
 	print
 	print "tmp=$(mktemp)"
-	print "wl=${XDG_CONFIG_HOME:-$HOME/.config}/uzbl/whitelist"
-	print "ck=${XDG_DATA_HOME:-$HOME/.config}/uzbl/cookies.txt"
+	print "wl=${XDG_CONFIG_HOME:-$HOME/.config}/reuzbl/whitelist"
+	print "ck=${XDG_DATA_HOME:-$HOME/.config}/reuzbl/cookies.txt"
 	print "cleancookies -w $wl -c $ck > $tmp"
 	print "mv $tmp $ck"
-	print "killall uzbl-cookie-daemon && uzbl-cookie-daemon -v start"
+	print "killall reuzbl-cookie-daemon && reuzbl-cookie-daemon -v start"
 	print
 
 

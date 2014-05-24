@@ -2,7 +2,7 @@
 
 # OH DUDE WHAT IZ ME BETA!!!
 
-# This is a unique Link following Script for uzbl. Instead of just numberize
+# This is a unique Link following Script for reuzbl. Instead of just numberize
 # visible Links in the Viewspace, dmenu ist utilized to select from all Links
 # by the Title of the Link. This is way more convinient for often used sites
 # where the user knows all links by surename.
@@ -15,7 +15,7 @@
 # be jabber or Email: 0mark at unserver.de
 #
 # getLinks.js is salvaged from follow_Numbers.js
-# the Socket Object from the uzbl-ctrl.pl script.
+# the Socket Object from the reuzbl-ctrl.pl script.
 #
 # TODO
 # soon:
@@ -64,7 +64,7 @@ sub Socket {
 my $query = Socket($ARGV[4]);
 my $new = $ARGV[7];
 
-# Let uzbl run a javascript that returns a list of links
+# Let reuzbl run a javascript that returns a list of links
 my @result = split(/\n/, $query->('script '.$Bin.'/getLinks.js'));
 
 my $titles;
@@ -88,7 +88,7 @@ $val[0] =~ s/\n//g;
 exit if($val[0] eq "");
 my $url = $urls{$val[0]};
 
-# Tell uzbl to use the selected url
+# Tell reuzbl to use the selected url
 if($new eq "new") {
   $query->("chain 'event SET_KEYCMD \@OpenInNewWindowKey' 'event APPEND_KEYCMD $url' 'event KEYCMD_EXEC_CURRENT' 'event SET_KEYCMD'");
 } else {

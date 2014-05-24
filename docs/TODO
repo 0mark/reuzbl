@@ -4,7 +4,7 @@ More or less in order of importance/urgency
 * a variable that holds the page state: loading, pending, seen. this can be shown in titlebar/statusbar and used for multiple instances management
 * allow to tag , to group instances together
 * store uri/tag/name/state in xorg window properties
-* split up uzbl.c into multiple files
+* split up reuzbl.c into multiple files
 * shortcuts to focus other instances (see docs/multiple-instances-management)
 
 * recognize -h with GOption?
@@ -13,13 +13,13 @@ More or less in order of importance/urgency
 * show % of location in statusbar/title if page doesn't fit entirely on view.
 * conditionals in format strings: eg if(SELECTED_URI) { "-> SELECTED_URI" } or another smart way to achieve the same.
 * make default window size configurable, and optional if this is not too much work
-* on uzbl.org commits overview: add date+time and repository
-* how to handle different content types? (text-plain, image/png, application/pdf,... maybe a map of content-type to uzbl/command
+* on reuzbl.org commits overview: add date+time and repository
+* how to handle different content types? (text-plain, image/png, application/pdf,... maybe a map of content-type to reuzbl/command
   xdg already has a spec for this i think
   different "opening" modes (open as configured vs ask before opening)
   integration with download and new window thingies?
 * blinking cursor when not in insert mode is confusing.  i suggest dimming it's color if possible
-* open in new window -> uzbl: Fatal IO error 11 (Resource temporarily unavailable) on X server :0.0.
+* open in new window -> reuzbl: Fatal IO error 11 (Resource temporarily unavailable) on X server :0.0.
 * check that in new version pageup etc works also in command
 * tab key to jump between input fields should probably work in both insert and command mode
 * do not delete fifo/socket if they exist already. rather give error and don't create one.
@@ -39,8 +39,8 @@ More or less in order of importance/urgency
 * regex style page searching? so you can do 'or' and 'and' things. flags like case sensitive etc.
 * check for real command name, not just the first letter.
 * Allow the spacebar to be binded to a command
-* let users attach handlers to the most common events/signals in uzbl.
-  great use case: automatically calling formfiller for certain sites, doing stuff at uzbl startup, etc
+* let users attach handlers to the most common events/signals in reuzbl.
+  great use case: automatically calling formfiller for certain sites, doing stuff at reuzbl startup, etc
 * document:
   stylesheet overridding
   formfiller

@@ -3,7 +3,7 @@
 # trusted -> always store what we get, send what we have (TODO: by default, or when requested?)
 # deny -> deny storing + sending
 
-# if you don't like to edit this file manually, you could even write a script that adds/removes entries using sed, and call the script from uzbl with a keybind...
+# if you don't like to edit this file manually, you could even write a script that adds/removes entries using sed, and call the script from reuzbl with a keybind...
 
 
 TRUSTED

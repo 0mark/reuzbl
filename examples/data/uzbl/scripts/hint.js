@@ -1,13 +1,13 @@
 for (var i=0; i < document.links.length; i++) {
-    var uzblid = 'uzbl_link_hint_';
+    var reuzblid = 'reuzbl_link_hint_';
     var li = document.links[i];
-    var pre = document.getElementById(uzblid+i);
+    var pre = document.getElementById(reuzblid+i);
 
     if (pre) {
         li.removeChild(pre);
     } else {
         var hint = document.createElement('div');
-        hint.setAttribute('id',uzblid+i);
+        hint.setAttribute('id',reuzblid+i);
         hint.innerHTML = i;
         hint.style.display='inline';
         hint.style.lineHeight='90%';

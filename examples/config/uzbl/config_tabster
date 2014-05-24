@@ -1,21 +1,21 @@
-# example uzbl config.
-# all settings are optional.  you can use uzbl without any config at all (but it won't do much)
+# example reuzbl config.
+# all settings are optional.  you can use reuzbl without any config at all (but it won't do much)
 
 # keyboard behavior in this sample config is sort of shooter style
 
 # Handlers
-handle SCHEME_REQUEST       = sync_spawn $XDG_DATA_HOME/uzbl/scripts/scheme.sh @last_event_details
+handle SCHEME_REQUEST       = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/scheme.sh @last_event_details
 handle LOAD_START           = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
-handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/get_per_site_js_ext.pl' 'sh "echo taburi $2 @uri > /tmp/tabster"'
-handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/uzbl/scripts/history.sh'
+handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/get_per_site_js_ext.pl' 'sh "echo taburi $2 @uri > /tmp/tabster"'
+handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/history.sh'
     
 handle NEW_WINDOW           = sh 'echo "new @last_event_details" > /tmp/tabster'  # open in tab below current tab
     
-handle COOKIE               = sync_spawn $XDG_DATA_HOME/uzbl/scripts/cookies.py @last_event_details
+handle COOKIE               = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/cookies.py @last_event_details
     
 handle TITLE_CHANGED        = sh 'echo "tabtitle $2 @last_event_details" > /tmp/tabster'
     
-handle DOWNLOAD_REQUEST     = spawn $XDG_DATA_HOME/uzbl/scripts/download.sh @last_event_details @proxy_url
+handle DOWNLOAD_REQUEST     = spawn $XDG_DATA_HOME/reuzbl/scripts/download.sh @last_event_details @proxy_url
 
 
 
@@ -26,7 +26,7 @@ set status_format           = <span font_family="monospace"><span background="kh
 set status_top              = 0
 set insert_indicator        = I
 set command_indicator       = C
-set useragent               = Uzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO) (@(uname -s)@ @(uname -n)@ @(uname -r)@ @(uname -v)@ @(uname -m)@ [@ARCH_UZBL]) (Commit @COMMIT)
+set useragent               = reUzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT_MICRO) (@(uname -s)@ @(uname -n)@ @(uname -r)@ @(uname -v)@ @(uname -m)@ [@ARCH_REUZBL]) (Commit @COMMIT)
 
 set fifo_dir                = /tmp
 set socket_dir              = /tmp
@@ -91,9 +91,9 @@ bind    d                   = forward
 bind    w                   = sh 'echo "prev" > /tmp/tabster'
 bind    s                   = sh 'echo "next" > /tmp/tabster'
 # ADWS  -> count last number in url up/down, directory up/down (sort of)
-bind    A                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js next
-bind    D                   = script $XDG_DATA_HOME/uzbl/scripts/go_next_prev.js prev
-bind    W                   = sh '$XDG_DATA_HOME/uzbl/scripts/go-down-dir.pl $6 > $4'
+bind    A                   = script $XDG_DATA_HOME/reuzbl/scripts/go_next_prev.js next
+bind    D                   = script $XDG_DATA_HOME/reuzbl/scripts/go_next_prev.js prev
+bind    W                   = sh '$XDG_DATA_HOME/reuzbl/scripts/go-down-dir.pl $6 > $4'
 bind    S                   = sh 'echo "set uri = $(dirname $6)" > $4'
 
 # ****** mnemonic keys (g,f,r,n,p,b,h,e,z)
@@ -101,7 +101,7 @@ bind    S                   = sh 'echo "set uri = $(dirname $6)" > $4'
 bind    g<uri: >_           = uri %s
 bind    G                   = set keycmd = g @uri
 # f    -> FOLLOW
-bind    f                   = spawn $XDG_DATA_HOME/uzbl/scripts/follow-dmenu.pl
+bind    f                   = spawn $XDG_DATA_HOME/reuzbl/scripts/follow-dmenu.pl
 # r,R  -> RELOAD (ign cache)
 bind    r                   = reload
 bind    R                   = reload_ign_cache
@@ -109,24 +109,24 @@ bind    R                   = reload_ign_cache
 bind    n                   = search
 bind    p                   = search_reverse
 # b,B  -> BOOKMARK
-bind    B                   = spawn $XDG_DATA_HOME/uzbl/scripts/insert_bookmark.pl zenity
-bind    b                   = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_bookmarks.sh
+bind    B                   = spawn $XDG_DATA_HOME/reuzbl/scripts/insert_bookmark.pl zenity
+bind    b                   = spawn $XDG_DATA_HOME/reuzbl/scripts/load_url_from_bookmarks.sh
 # h    -> HISTORY
-bind    h                   = spawn $XDG_DATA_HOME/uzbl/scripts/load_url_from_history.sh
+bind    h                   = spawn $XDG_DATA_HOME/reuzbl/scripts/load_url_from_history.sh
 # e*   -> EDIT
 set follow_hint_keys = 0123456789
-bind    e*                  = script $XDG_DATA_HOME/uzbl/scripts/follow_mod.js 'forms @follow_hint_keys %s'
+bind    e*                  = script $XDG_DATA_HOME/reuzbl/scripts/follow_mod.js 'forms @follow_hint_keys %s'
 # z,Z  -> ZOOM
 bind    Z                   = toggle_zoom_type
 bind    z                   = set zoom_level 1.0
 # t,T... -> Tab/Branch
-bind    tn                  = sh 'echo "new uzbl -s %d" > /tmp/tabster'
+bind    tn                  = sh 'echo "new reuzbl -s %d" > /tmp/tabster'
 #bind    Tn                  = sh 'echo "cnew" > /tmp/tabster'
-bind    tv                  = sh 'echo "new uzbl -s %d `xclip -selection primary -o`" > /tmp/tabster'
+bind    tv                  = sh 'echo "new reuzbl -s %d `xclip -selection primary -o`" > /tmp/tabster'
 #bind    Tv                  = sh 'echo "cnew `xclip -selection primary -o`" > /tmp/tabster'
-bind    tV                  = sh 'echo "new uzbl -s %d `xclip -selection clipboard -o`" > /tmp/tabster'
+bind    tV                  = sh 'echo "new reuzbl -s %d `xclip -selection clipboard -o`" > /tmp/tabster'
 #bind    TV                  = sh 'echo "cnew `xclip -selection clipboard -o`" > /tmp/tabster'
-bind    tg<uri: >_          = sh 'echo "new uzbl -s %%d -u %s" > /tmp/tabster'
+bind    tg<uri: >_          = sh 'echo "new reuzbl -s %%d -u %s" > /tmp/tabster'
 #bind    Tg<uri: >_          = sh 'echo "cnew %s" > /tmp/tabster'
 bind    tG                  = set keycmd = tg @uri
 #bind    TG                  = set keycmd = Tg @uri
@@ -180,14 +180,14 @@ bind    ?le<Dict:>_         = uri http://dict.leo.org/ende?lp=ende&lang=de&searc
 bind    ;_                  = set %s
 # !    -> special functions
 bind    !y<Genre:>_         = sh '/home/mark/bin/ydl.sh "%s" "Various Youtube" "" "$7" "" "$6"'
-bind    !pss                = spawn $XDG_DATA_HOME/uzbl/scripts/per_site_settings.pl
+bind    !pss                = spawn $XDG_DATA_HOME/reuzbl/scripts/per_site_settings.pl
 set external_editor = leafpad
-bind    !e                  = script $XDG_DATA_HOME/uzbl/scripts/extedit.js
+bind    !e                  = script $XDG_DATA_HOME/reuzbl/scripts/extedit.js
 bind    !i                  = toggle_insert_mode
 bind    !I                  = toggle_insert_mode 0
 # y    -> formfiller
-bind    y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl load %s
-bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl edit %s
+bind    y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.pl load %s
+bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.pl edit %s
 
 
 
@@ -203,12 +203,12 @@ bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts
 #--------------------------------------------------------------------------------
 #bind  s<var:>_<value:>_  = set %1 = %2
 #bind  !reload            = sh "sed '/^# === Post-load misc commands/,$d' $1 > $4"
-## Uzbl Terminal. TODO explain why this is useful
+## reUzbl Terminal. TODO explain why this is useful
 #bind  <Ctrl><Alt>t  = sh 'xterm -e "socat unix-connect:$5 -"'
 
 ###bind    t         = toggle_status
-###bind    gh        = uri http://www.uzbl.org
-###bind    'p        = sh 'exec uzbl --uri $(xclip -o)'
+###bind    gh        = uri http://www.reuzbl.org
+###bind    'p        = sh 'exec reuzbl --uri $(xclip -o)'
 ###bind    ZZ        = exit
 ###bind    Xs         = js alert("hi");
 # example showing how to use sh
@@ -224,26 +224,26 @@ bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/uzbl/scripts
 ###bind    !reload   = sh 'cat $1 > $4'
 
 # this script allows you to configure (per domain) values to fill in form fields (eg login information) and to fill in these values automatically
-###bind za = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh
-###bind ze = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh edit
-###bind zn = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh new
-###bind zl = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.sh load
+###bind za = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.sh
+###bind ze = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.sh edit
+###bind zn = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.sh new
+###bind zl = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.sh load
 
 # other - more advanced - implementation using perl: (could not get this to run - Dieter )
-###bind LL = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl load
-###bind LN = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl new
-###bind LE = spawn $XDG_DATA_HOME/uzbl/scripts/formfiller.pl edit
+###bind LL = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.pl load
+###bind LN = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.pl new
+###bind LE = spawn $XDG_DATA_HOME/reuzbl/scripts/formfiller.pl edit
 
 # we ship some javascripts to do keyboard based link hinting/following.  (webkit does not have C DOM bindings yet)
 # this is similar to how it works in vimperator (and konqueror)
 # TODO: did we resolve: "no click() event for hyperlinks so no referrer set" ?
 #hit F to toggle the Hints (now in form of link numbering)
-###bind    F = script $XDG_DATA_HOME/uzbl/scripts/hint.js
+###bind    F = script $XDG_DATA_HOME/reuzbl/scripts/hint.js
 # the most stable version:
-#bind    !fl* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers.js %s
+#bind    !fl* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers.js %s
 # using strings, not polished yet:
-###bind    fL* = script $XDG_DATA_HOME/uzbl/scripts/follow_Numbers_Strings.js %s
+###bind    fL* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers_Strings.js %s
 
 
 # "home" page if you will
-set uri = uzbl.org
+set uri = reuzbl.org

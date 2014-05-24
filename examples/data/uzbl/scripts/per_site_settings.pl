@@ -4,7 +4,7 @@ use strict;
 use Gtk2 '-init';
 use File::Spec;
 
-my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/uzbl/per-site';
+my $file = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/reuzbl/per-site';
 my $base = my $host = $ARGV[5];
 $base =~ s/\/[^\/]*$//g;
 $host =~ s/([^:]+:\/\/)([^.]+\.)*([^.]+\.[^\/]+\/).*/$1*$3/g;
@@ -118,7 +118,7 @@ sub keypress() {
 }
 
 sub button_remove {
-  my $exec = $ENV{XDG_DATA_HOME}.'/uzbl/scripts/set_per_site_js_ext.pl';
+  my $exec = $ENV{XDG_DATA_HOME}.'/reuzbl/scripts/set_per_site_js_ext.pl';
   system($exec, $ARGV[0], $ARGV[1], $ARGV[2], $ARGV[3], $ARGV[4], $ARGV[5], $ARGV[6], $mode, 'remove');
   Gtk2->main_quit;
   1;
@@ -138,7 +138,7 @@ sub button_ok {
 	    ' x'.(($proxy->get_text() eq '')?'0':$proxy->get_text());
 
   # TODO: use same path as this script like in follow_dmenu
-  my $exec = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/uzbl/scripts/set_per_site_js_ext.pl';
+  my $exec = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share').'/reuzbl/scripts/set_per_site_js_ext.pl';
 
   system($exec, $ARGV[0], $ARGV[1], $ARGV[2], $ARGV[3], $ARGV[4], $ARGV[5], $ARGV[6], $mode, $res);
 

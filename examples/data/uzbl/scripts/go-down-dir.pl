@@ -7,7 +7,7 @@ use File::Basename;
 
 my $url = shift;
 
-my @hstry = reverse(split(/\n/, `cat \$XDG_DATA_HOME/uzbl/history | grep $url | cut -d " " -f 3`));
+my @hstry = reverse(split(/\n/, `cat \$XDG_DATA_HOME/reuzbl/history | grep $url | cut -d " " -f 3`));
 
 foreach (@hstry) {
   if (dirname($_).'/' eq $url) {

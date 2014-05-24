@@ -1,20 +1,20 @@
-// link follower for uzbl
-// requires http://github.com/DuClare/uzbl/commit/6c11777067bdb8aac09bba78d54caea04f85e059
+// link follower for reuzbl
+// requires http://github.com/DuClare/reuzbl/commit/6c11777067bdb8aac09bba78d54caea04f85e059
 //
 // first, it needs to be loaded before every time it is used.
 // One way would be to use the load_commit_handler:
-// set load_commit_handler = sh 'echo "script /usr/share/uzbl/examples/scripts/linkfollow.js" > "$4"'
+// set load_commit_handler = sh 'echo "script /usr/share/reuzbl/examples/scripts/linkfollow.js" > "$4"'
 //
 // when script is loaded, it can be invoked with
 // bind f* = js hints.set("%s",   hints.open)
 // bind f_ = js hints.follow("%s",hints.open)
 //
-// At the moment, it may be useful to have way of forcing uzbl to load the script
-// bind :lf = script /usr/share/uzbl/examples/scripts/linkfollow.js
+// At the moment, it may be useful to have way of forcing reuzbl to load the script
+// bind :lf = script /usr/share/reuzbl/examples/scripts/linkfollow.js
 //
 // The default style for the hints are pretty ugly, so it is recommended to add the following
 // to config file
-// set stylesheet_uri = /usr/share/uzbl/examples/data/style.css
+// set stylesheet_uri = /usr/share/reuzbl/examples/data/style.css
 //
 // based on follow_Numbers.js
 //
@@ -39,9 +39,9 @@ function Hints(){
   // var matchCase = "";
 
 
-  var uzblid = 'uzbl_hint';
-  var uzblclass = 'uzbl_highlight';
-  var uzblclassfirst = 'uzbl_h_first';
+  var reuzblid = 'reuzbl_hint';
+  var reuzblclass = 'reuzbl_highlight';
+  var reuzblclassfirst = 'reuzbl_h_first';
   var doc = document;
   var visible = [];
   var hintdiv;
@@ -116,15 +116,15 @@ function Hints(){
     this.num = 0;
 
     this.addHint = function (labelNum) {
-      // TODO: fix uzblclassfirst
+      // TODO: fix reuzblclassfirst
       if(!this.isHinted){
-        this.node.className += " " + uzblclass;
+        this.node.className += " " + reuzblclass;
       }
       this.isHinted = true;
 
       // create hint
       var hintNode = doc.createElement('div');
-      hintNode.name = uzblid;
+      hintNode.name = reuzblid;
       hintNode.innerText = labelNum;
       hintNode.style.left = this.position.left + 'px';
       hintNode.style.top =  this.position.up + 'px';
@@ -134,7 +134,7 @@ function Hints(){
     }
     this.removeHint = function(){
       if(this.isHinted){
-        var s = (this.num)?uzblclassfirst:uzblclass;
+        var s = (this.num)?reuzblclassfirst:reuzblclass;
         this.node.className = this.node.className.replace(new RegExp(" "+s,"g"),"");
         this.isHinted = false;
       }
@@ -142,12 +142,12 @@ function Hints(){
   }
 
   function createHintDiv(){
-    var hintdiv = doc.getElementById(uzblid);
+    var hintdiv = doc.getElementById(reuzblid);
     if(hintdiv){
       hintdiv.parentNode.removeChild(hintdiv);
     }
     hintdiv = doc.createElement("div");
-    hintdiv.setAttribute('id',uzblid);
+    hintdiv.setAttribute('id',reuzblid);
     doc.body.insertBefore(hintdiv,doc.body.firstChild);
     return hintdiv;
   }
@@ -171,10 +171,10 @@ function Hints(){
   function clear(){
 
     visible.forEach(function (n) { n.removeHint(); } );
-    hintdiv = doc.getElementById(uzblid);
+    hintdiv = doc.getElementById(reuzblid);
     while(hintdiv){
       hintdiv.parentNode.removeChild(hintdiv);
-      hintdiv = doc.getElementById(uzblid);
+      hintdiv = doc.getElementById(reuzblid);
     }
   }
 
@@ -212,12 +212,12 @@ function Hints(){
 
   this.openNewWindow = function(item){
     // TODO: this doesn't work yet
-    item.className += " uzbl_follow";
-    window.open(item.href,"uzblnew","");
+    item.className += " reuzbl_follow";
+    window.open(item.href,"reuzblnew","");
   }
   this.open = function(item){
     simulateMouseOver(item);
-    item.className += " uzbl_follow";
+    item.className += " reuzbl_follow";
     window.location = item.href;
   }
 

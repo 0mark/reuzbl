@@ -11,15 +11,15 @@
  */
 
 //Just some shortcuts and globals
-var uzblid = 'uzbl_link_hint';
-var uzbldivid = uzblid + '_div_container';
+var reuzblid = 'reuzbl_link_hint';
+var reuzbldivid = reuzblid + '_div_container';
 var doc = document;
 var win = window;
 var links = document.links;
 var forms = document.forms;
 
 //Reset keycmd, modcmd and return to default mode.
-function clearKeycmd() { Uzbl.run('set mode ='); }
+function clearKeycmd() { reUzbl.run('set mode ='); }
 
 //Make onlick-links "clickable"
 try {
@@ -86,7 +86,7 @@ function elementInViewport(el) {
 //Removes all hints/leftovers that might be generated
 //by this script.
 function removeAllHints() {
-    var elements = doc.getElementById(uzbldivid);
+    var elements = doc.getElementById(reuzbldivid);
     if (elements) {
         elements.parentNode.removeChild(elements);
     }
@@ -96,7 +96,7 @@ function removeAllHints() {
 function generateHint(el, label) {
     var pos = elementPosition(el);
     var hint = doc.createElement('div');
-    hint.setAttribute('name', uzblid);
+    hint.setAttribute('name', reuzblid);
     hint.innerText = label;
     hint.style.display = 'inline';
     hint.style.backgroundColor = '#B9FF00';
@@ -139,16 +139,16 @@ function clickElem(item) {
             if (type == 'TEXT' || type == 'FILE' || type == 'PASSWORD') {
                 item.focus();
                 item.select();
-                //Uzbl.run('@toggle_cmd_ins');
-                //Uzbl.run('keycmd_nl');
+                //reUzbl.run('@toggle_cmd_ins');
+                //reUzbl.run('keycmd_nl');
             } else {
                 item.click();
             }
         } else if (name == 'TEXTAREA' || name == 'SELECT') {
             item.focus();
             item.select();
-            //Uzbl.run('@toggle_cmd_ins');
-            //Uzbl.run('keycmd_nl');
+            //reUzbl.run('@toggle_cmd_ins');
+            //reUzbl.run('keycmd_nl');
         } else {
             item.click();
             window.location = item.href;
@@ -188,7 +188,7 @@ function addFormElems() {
 function reDrawHints(elems, chars) {
     removeAllHints();
     var hintdiv = doc.createElement('div');
-    hintdiv.setAttribute('id', uzbldivid);
+    hintdiv.setAttribute('id', reuzbldivid);
     for (var i = 0; i < elems[0].length; i++) {
         if (elems[0][i]) {
             var label = elems[1][i].substring(chars);
@@ -245,7 +245,7 @@ function followLinks(follow) {
     var formelems = addFormElems();
     var elems = [linkelems[0].concat(formelems[0]), linkelems[1].concat(formelems[1])];
     var len = labelLength(elems[0].length);
-    var oldDiv = doc.getElementById(uzbldivid);
+    var oldDiv = doc.getElementById(reuzbldivid);
     var leftover = [[], []];
     if (s.length == len && linknr < elems[0].length && linknr >= 0) {
         clickElem(elems[0][linknr]);

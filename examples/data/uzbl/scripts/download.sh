@@ -18,7 +18,7 @@ url="$8"
 http_proxy="$9"
 export http_proxy
 
-test "x$url" = "x" && { notify-send "uzbl-dl" "you must supply a url! ($url)"; exit 1; }
+test "x$url" = "x" && { notify-send "reuzbl-dl" "you must supply a url! ($url)"; exit 1; }
 
 shift
 if test "$do" = "open";
