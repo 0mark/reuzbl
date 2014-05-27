@@ -1,20 +1,22 @@
 # example reuzbl config.
 # all settings are optional.  you can use reuzbl without any config at all (but it won't do much)
-
+#
 # keyboard behavior in this sample config is sort of shooter style
+
+
 
 # Handlers
 handle SCHEME_REQUEST       = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/scheme.sh @last_event_details
 handle LOAD_START           = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
-handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/get_per_site_js_ext.pl' 'sh "echo taburi $2 @uri > /tmp/tabster"'
-handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/history.sh'
-    
-handle NEW_WINDOW           = sh 'echo "new @last_event_details" > /tmp/tabster'  # open in tab below current tab
-    
+handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/get_per_site_js_ext.pl' 'sh "echo restore_cmd $2 reuzbl -s %d -u @uri > /tmp/tabster$TABSTER_PID"'
 handle COOKIE               = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/cookies.py @last_event_details
-    
-handle TITLE_CHANGED        = sh 'echo "tabtitle $2 @last_event_details" > /tmp/tabster'
-    
+handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/history.sh'
+handle TITLE_CHANGED        = sh 'echo "tabtitle $2 @last_event_details" > /tmp/tabster$TABSTER_PID'
+
+#handle NEW_WINDOW           = sh 'echo uri "@last_event_details" > $4'                # open in same window
+#handle NEW_WINDOW           = sh 'reuzbl -u "@last_event_details"'                      # equivalent to the default behaviour
+handle NEW_WINDOW           = sh 'echo "new reuzbl -s %%d -u @last_event_details" > /tmp/tabster$TABSTER_PID'  # open in tab
+
 handle DOWNLOAD_REQUEST     = spawn $XDG_DATA_HOME/reuzbl/scripts/download.sh @last_event_details @proxy_url
 
 
@@ -31,6 +33,16 @@ set useragent               = reUzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT
 set fifo_dir                = /tmp
 set socket_dir              = /tmp
 set shell_cmd               = sh -c
+
+# "home" page if you will
+set uri                     = reuzbl.org
+
+
+
+# Mouse interface
+button  2                   = sh 'echo "bcnew reuzbl -s %d -u @last_event_details" > /tmp/tabster$TABSTER_PID'
+
+
 
 # Keyboard interface
 set modkey = Mod1
@@ -88,8 +100,8 @@ bind    K                   = scroll_end
 # adws  -> history prev/next, in-site perv/next link
 bind    a                   = back
 bind    d                   = forward
-bind    w                   = sh 'echo "prev" > /tmp/tabster'
-bind    s                   = sh 'echo "next" > /tmp/tabster'
+bind    w                   = sh 'echo "prev" > /tmp/tabster$TABSTER_PID'
+bind    s                   = sh 'echo "next" > /tmp/tabster$TABSTER_PID'
 # ADWS  -> count last number in url up/down, directory up/down (sort of)
 bind    A                   = script $XDG_DATA_HOME/reuzbl/scripts/go_next_prev.js next
 bind    D                   = script $XDG_DATA_HOME/reuzbl/scripts/go_next_prev.js prev
@@ -120,33 +132,33 @@ bind    e*                  = script $XDG_DATA_HOME/reuzbl/scripts/follow_mod.js
 bind    Z                   = toggle_zoom_type
 bind    z                   = set zoom_level 1.0
 # t,T... -> Tab/Branch
-bind    tn                  = sh 'echo "new reuzbl -s %d" > /tmp/tabster'
-#bind    Tn                  = sh 'echo "cnew" > /tmp/tabster'
-bind    tv                  = sh 'echo "new reuzbl -s %d `xclip -selection primary -o`" > /tmp/tabster'
-#bind    Tv                  = sh 'echo "cnew `xclip -selection primary -o`" > /tmp/tabster'
-bind    tV                  = sh 'echo "new reuzbl -s %d `xclip -selection clipboard -o`" > /tmp/tabster'
-#bind    TV                  = sh 'echo "cnew `xclip -selection clipboard -o`" > /tmp/tabster'
-bind    tg<uri: >_          = sh 'echo "new reuzbl -s %%d -u %s" > /tmp/tabster'
-#bind    Tg<uri: >_          = sh 'echo "cnew %s" > /tmp/tabster'
+bind    tn                  = sh 'echo "new reuzbl -s %d" > /tmp/tabster$TABSTER_PID'
+bind    Tn                  = sh 'echo "cnew reuzbl -s %d" > /tmp/tabster$TABSTER_PID'
+bind    tv                  = sh 'echo "new reuzbl -s %d -u `xclip -selection primary -o`" > /tmp/tabster$TABSTER_PID'
+bind    Tv                  = sh 'echo "cnew reuzbl -s %d -u `xclip -selection primary -o`" > /tmp/tabster$TABSTER_PID'
+bind    tV                  = sh 'echo "new reuzbl -s %d -u `xclip -selection clipboard -o`" > /tmp/tabster$TABSTER_PID'
+bind    TV                  = sh 'echo "cnew reuzbl -s %d -u `xclip -selection clipboard -o`" > /tmp/tabster$TABSTER_PID'
+bind    tg<uri: >_          = sh 'echo "new reuzbl -s %%d -u %s" > /tmp/tabster$TABSTER_PID'
+bind    Tg<uri: >_          = sh 'echo "cnew reuzbl -s %%d -u %s" > /tmp/tabster$TABSTER_PID'
 bind    tG                  = set keycmd = tg @uri
-#bind    TG                  = set keycmd = Tg @uri
-bind    tx                  = sh 'echo "close" > /tmp/tabster'
-#bind    Tx                  = sh 'echo "treeclose" > /tmp/tabster'
-#bind    tg_                 = sh 'echo "goto %s" > /tmp/tabster'
-bind    0                   = sh 'echo "goto 0" > /tmp/tabster'
-bind    1                   = sh 'echo "goto 1" > /tmp/tabster'
-bind    2                   = sh 'echo "goto 2" > /tmp/tabster'
-bind    3                   = sh 'echo "goto 3" > /tmp/tabster'
-bind    4                   = sh 'echo "goto 4" > /tmp/tabster'
-bind    5                   = sh 'echo "goto 5" > /tmp/tabster'
-bind    6                   = sh 'echo "goto 6" > /tmp/tabster'
-bind    7                   = sh 'echo "goto 7" > /tmp/tabster'
-bind    8                   = sh 'echo "goto 8" > /tmp/tabster'
-bind    9                   = sh 'echo "goto 9" > /tmp/tabster'
-bind    tm_                 = sh 'echo "move %s" > /tmp/tabster'
-bind    ta_                 = sh 'echo "attach %s" > /tmp/tabster'
-bind    th                  = sh 'echo "hidetree" > /tmp/tabster'
-bind    ts                  = sh 'echo "showtree" > /tmp/tabster'
+bind    TG                  = set keycmd = Tg @uri
+bind    tx                  = sh 'echo "close" > /tmp/tabster$TABSTER_PID'
+bind    Tx                  = sh 'echo "treeclose" > /tmp/tabster$TABSTER_PID'
+#bind    tg_                 = sh 'echo "goto %s" > /tmp/tabster$TABSTER_PID'
+bind    0                   = sh 'echo "goto 0" > /tmp/tabster$TABSTER_PID'
+bind    1                   = sh 'echo "goto 1" > /tmp/tabster$TABSTER_PID'
+bind    2                   = sh 'echo "goto 2" > /tmp/tabster$TABSTER_PID'
+bind    3                   = sh 'echo "goto 3" > /tmp/tabster$TABSTER_PID'
+bind    4                   = sh 'echo "goto 4" > /tmp/tabster$TABSTER_PID'
+bind    5                   = sh 'echo "goto 5" > /tmp/tabster$TABSTER_PID'
+bind    6                   = sh 'echo "goto 6" > /tmp/tabster$TABSTER_PID'
+bind    7                   = sh 'echo "goto 7" > /tmp/tabster$TABSTER_PID'
+bind    8                   = sh 'echo "goto 8" > /tmp/tabster$TABSTER_PID'
+bind    9                   = sh 'echo "goto 9" > /tmp/tabster$TABSTER_PID'
+bind    tm_                 = sh 'echo "move %s" > /tmp/tabster$TABSTER_PID'
+bind    ta_                 = sh 'echo "attach %s" > /tmp/tabster$TABSTER_PID'
+bind    th                  = sh 'echo "hidetree" > /tmp/tabster$TABSTER_PID'
+bind    ts                  = sh 'echo "showtree" > /tmp/tabster$TABSTER_PID'
 
 # ****** well-known keys (/,\,:,c,v)
 # /,\  -> search (backwards)
@@ -155,9 +167,13 @@ bind    \\*                 = search_reverse %s
 # :     -> command line
 bind    :_                  = chain '%s'
 # c,C  -> COPY (url, title)
+#bind    c                   = spawn $XDG_DATA_HOME/reuzbl/scripts/yank.sh 6 primary
+#bind    C                   = spawn $XDG_DATA_HOME/reuzbl/scripts/yank.sh 7 primary
 bind    c                   = 'echo "@uri" | xclip -selection primary'
 bind    C                   = 'echo "@uri" | xclip -selection clipboard'
 # v,V  -> paste (selection/clipboard)
+#bind    v                   = sh 'echo "uri `xclip -selection primary -o`" | socat - unix-connect:$5
+#bind    V                   = sh 'echo "uri `xclip -selection clipboard -o`" | socat - unix-connect:$5
 bind    v                   = sh 'echo "uri `xclip -selection primary -o`" > $4'
 bind    V                   = sh 'echo "uri `xclip -selection clipboard -o`" > $4'
 
@@ -243,7 +259,3 @@ bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/reuzbl/scrip
 #bind    !fl* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers.js %s
 # using strings, not polished yet:
 ###bind    fL* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers_Strings.js %s
-
-
-# "home" page if you will
-set uri = reuzbl.org

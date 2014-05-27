@@ -45,7 +45,7 @@ sub Socket {
   }
 }
 my $query = Socket($ARGV[4]);
-my $keydir = $ENV{XDG_DATA_HOME} . "/reuzbl/forms";
+my $keydir = ($ENV{XDG_DATA_HOME} ? $ENV{XDG_DATA_HOME} : $ENV{HOME}.'/.local/share') . "/reuzbl/forms";
 my ($config,$pid,$xid,$fifoname,$socket,$url,$title,$cmd,$mode) = @ARGV;
 if (!defined $fifoname || $fifoname eq "") { die "No fifo"; }
 
@@ -111,10 +111,11 @@ $command{edit} = sub {
   my $domain=domain($url);
   my $filename = "$keydir/$domain/".md5_hex(path($url));
   print $filename."\n";
+  if(! -e $filename) {
+    $command{new}->($url);
+  }
   if(-e $filename){
     system ($editor.' '.$filename);
-  } else {
-    $command{new}->($url);
   }
 };
 $command{new} = sub {

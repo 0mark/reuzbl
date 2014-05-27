@@ -32,16 +32,16 @@ function getTitle(li, type) {
         type=0;
       }
     } else {
-      if (nodes(i).alt!="" && type>1) {
+      if (typeof nodes=='function' && nodes(i).alt!="" && type>1) {
         text=nodes(i).alt;
         type=1;
-      } else if (nodes(i).title!="" && type>2) {
+      } else if (typeof nodes=='function' && nodes(i).title!="" && type>2) {
         text=nodes(i).title;
         type=2;
-      } else if (nodes(i).id!="" && type>3) {
+      } else if (typeof nodes=='function' && nodes(i).id!="" && type>3) {
         text=nodes(i).id;
         type=3;
-      } else if (nodes(i).src!="" && type>4) {
+      } else if (typeof nodes=='function' && nodes(i).src!="" && type>4) {
         text=nodes(i).id;
         type=4;
       } else {

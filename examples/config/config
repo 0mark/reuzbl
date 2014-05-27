@@ -1,19 +1,20 @@
 # example reuzbl config.
 # all settings are optional.  you can use reuzbl without any config at all (but it won't do much)
-
+#
 # keyboard behavior in this sample config is sort of shooter style
+
+
 
 # Handlers
 handle SCHEME_REQUEST       = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/scheme.sh @last_event_details
 handle LOAD_START           = chain 'set keycmd = ' 'set status_message = <span foreground="khaki">wait</span>'
 handle LOAD_COMMIT          = chain 'set status_message = <span foreground="green">recv</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/get_per_site_js_ext.pl'
+handle COOKIE               = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/cookies.py @last_event_details
 handle LOAD_FINISH          = chain 'set status_message = <span foreground="gold">done</span>' 'spawn $XDG_DATA_HOME/reuzbl/scripts/history.sh'
-    
+
 #handle NEW_WINDOW           = sh 'echo uri "@last_event_details" > $4'                # open in same window
 handle NEW_WINDOW           = sh 'reuzbl -u "@last_event_details"'                      # equivalent to the default behaviour
-    
-handle COOKIE               = sync_spawn $XDG_DATA_HOME/reuzbl/scripts/cookies.py @last_event_details
-    
+
 handle DOWNLOAD_REQUEST     = spawn $XDG_DATA_HOME/reuzbl/scripts/download.sh @last_event_details @proxy_url
 
 
@@ -30,6 +31,16 @@ set useragent               = reUzbl (Webkit @WEBKIT_MAJOR.@WEBKIT_MINOR.@WEBKIT
 set fifo_dir                = /tmp
 set socket_dir              = /tmp
 set shell_cmd               = sh -c
+
+# "home" page if you will
+set uri                     = reuzbl.org
+
+
+
+# Mouse interface
+button  2                   = sh 'reuzbl -u "@last_event_details"'
+
+
 
 # Keyboard interface
 set modkey = Mod1
@@ -216,7 +227,3 @@ bind    Y<(d)omain, (p)ath, (g)et, (a)ll: >_ = spawn $XDG_DATA_HOME/reuzbl/scrip
 #bind    !fl* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers.js %s
 # using strings, not polished yet:
 ###bind    fL* = script $XDG_DATA_HOME/reuzbl/scripts/follow_Numbers_Strings.js %s
-
-
-# "home" page if you will
-set uri = reuzbl.org
